@@ -1,0 +1,3062 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAI Post Studio</title>
+<meta name="description" content="Generátor příspěvků na Instagram Fakulty aplikované informatiky UTB.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: two-pane editor. Quiet control rail on the left, the post on a neutral stage on the right.
+   FAI yellow appears only inside the post and on the one primary action. */
+:root{
+  --stage:#E9E6DE;
+  --panel:#FAF9F5;
+  --field:#F1EEE7;
+  --fg:#1C1B18;
+  --muted:#6F6A60;
+  --line:#DCD7CB;
+  --accent:#FECB00;
+  --accent-ink:#1C1B18;
+  --teal:#007D9B;
+  --shadow:rgba(70,52,0,.22);
+  --warn:#8A2F0C; --warn-bg:#FBE3D3;
+  --font-ui:"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:"Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stage:#141311; --panel:#1B1A17; --field:#25231F; --fg:#F2EFE7; --muted:#A39E92; --line:#302E29;
+    --accent:#FECB00; --accent-ink:#1C1B18; --teal:#4DB8D2; --shadow:rgba(0,0,0,.55); --warn:#FDBA8C; --warn-bg:#3A2418; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --stage:#141311; --panel:#1B1A17; --field:#25231F; --fg:#F2EFE7; --muted:#A39E92; --line:#302E29;
+  --accent:#FECB00; --accent-ink:#1C1B18; --teal:#4DB8D2; --shadow:rgba(0,0,0,.55); --warn:#FDBA8C; --warn-bg:#3A2418; color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--stage);color:var(--fg);font:14px/1.45 var(--font-ui);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:minmax(300px,372px) minmax(0,1fr);height:100%}
+
+/* ---------- panel ---------- */
+.panel{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;min-width:0}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px 16px;border-bottom:1px solid var(--line)}
+.brand h1{margin:0;font:600 16px/1 var(--font-ui);letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.mark{position:relative;width:30px;height:30px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font:600 12px/1 var(--font-mono);color:var(--accent-ink);letter-spacing:-.04em}
+.linkbtn{background:none;border:0;padding:4px 0;color:var(--muted);font:500 11px/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.linkbtn:hover{color:var(--fg)}
+.sections{flex:1;overflow:auto;min-height:0}
+details{border-bottom:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;font:500 11px/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);user-select:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font:400 16px/1 var(--font-mono);color:var(--muted)}
+details[open] > summary::after{content:"−"}
+details[open] > summary{color:var(--fg)}
+.sec{padding:0 20px 20px;display:grid;gap:16px}
+.ctl{display:grid;gap:7px;min-width:0}
+.ctl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctl label,.lbl{font-size:13px;color:var(--fg)}
+output{font:12px/1 var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.note{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
+.note strong{color:var(--fg);font-weight:500}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:var(--line)}
+input[type=range]::-moz-range-track{height:3px;border-radius:3px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6.5px;border-radius:50%;background:var(--panel);border:2px solid var(--fg)}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--fg)}
+input[type=range]:hover::-webkit-slider-thumb{background:var(--accent)}
+input[type=range]:hover::-moz-range-thumb{background:var(--accent)}
+
+input[type=text],textarea,select{width:100%;min-width:0;background:var(--field);border:1px solid transparent;border-radius:8px;padding:9px 11px;font-size:14px;line-height:1.35}
+textarea{resize:vertical;min-height:44px}
+input[type=text]:hover,textarea:hover,select:hover{border-color:var(--line)}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--fg);outline:none}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 55%,calc(100% - 12px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+
+.seg{display:flex;background:var(--field);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{flex:1 1 auto;border:0;background:transparent;border-radius:7px;padding:7px 8px;font-size:12.5px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button:hover:not(:disabled){color:var(--fg)}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--line)}
+.seg button:disabled{opacity:.35;cursor:not-allowed}
+
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatches button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px 5px 6px;font-size:12.5px;color:var(--muted);cursor:pointer}
+.swatches button[aria-pressed="true"]{border-color:var(--fg);color:var(--fg)}
+.dot{width:16px;height:16px;border-radius:50%;flex:none;background:var(--c);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.dot.duo{background:linear-gradient(90deg,#1C1B18 50%,#007D9B 50%)}
+
+.switch{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;font-size:13px}
+.switch input{appearance:none;-webkit-appearance:none;width:34px;height:20px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;flex:none;margin:0;transition:background .15s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--panel);transition:transform .15s}
+.switch input:checked{background:var(--fg)}
+.switch input:checked::after{transform:translateX(14px)}
+
+.btn{border:1px solid var(--line);background:transparent;border-radius:9px;padding:9px 14px;font-size:13.5px;cursor:pointer;color:var(--fg)}
+.btn:hover{border-color:var(--fg)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{filter:brightness(.96)}
+.btn.small{padding:6px 11px;font-size:12.5px}
+.btn[disabled]{opacity:.5;cursor:progress}
+.filebar{display:flex;align-items:center;gap:10px;min-width:0}
+.filename{font:12px var(--font-mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+.adv{border:1px solid var(--line);border-radius:10px;background:transparent}
+.adv > summary{padding:11px 14px;font:500 13px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;color:var(--fg);justify-content:flex-start;gap:8px}
+.adv > summary::after{margin-left:auto}
+.adv > summary:hover{background:var(--field);border-radius:9px}
+.adv[open] > summary{border-bottom:1px solid var(--line);border-radius:9px 9px 0 0}
+.adv-body{padding:14px;display:grid;gap:16px}
+.adv-chip{font:500 11px/1 var(--font-mono);letter-spacing:.06em;padding:3px 7px;border-radius:999px;background:var(--accent);color:var(--accent-ink)}
+.sub{display:grid;gap:16px}
+.kind-bar{padding:16px 20px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.seg-lg button{padding:10px 8px;font-size:14px;font-weight:500}
+.kind-bar .seg.seg-lg button[aria-pressed="true"]{background:var(--fg);color:var(--panel);box-shadow:none}
+.warn{margin:0;padding:9px 12px;border-radius:9px;font-size:12.5px;line-height:1.4;background:var(--warn-bg);color:var(--warn)}
+@media (max-width: 860px){ .kind-bar{padding:14px 16px} }
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+fieldset{border:0;margin:0;padding:0;min-width:0;display:grid;gap:16px}
+.brand-wrap{position:relative;border-radius:10px;transition:background .15s}
+.brand-wrap.locked fieldset{opacity:.42;filter:saturate(.4)}
+.brand-wrap.locked::after{content:"";position:absolute;inset:-6px;cursor:not-allowed}
+.brand-wrap.nudge{animation:nudge .32s ease}
+@keyframes nudge{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.lockbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lockbar .note{flex:1;min-width:0}
+.ico{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;flex:none}
+.lockbtn{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.lockbtn .ico-open,.lock-chip .ico-open{display:none}
+.unlocked .lockbtn .ico-open,.unlocked .lock-chip .ico-open{display:block}
+.unlocked .lockbtn .ico-closed,.unlocked .lock-chip .ico-closed{display:none}
+.unlocked .lockbtn{background:var(--fg);color:var(--panel);border-color:var(--fg)}
+.lockbtn.pulse{animation:pulse .6s ease}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 transparent}40%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 70%,transparent)}}
+.lock-chip{display:inline-flex;align-items:center;gap:5px;margin-left:auto;margin-right:10px;padding:3px 8px;border-radius:999px;background:var(--field);color:var(--muted);letter-spacing:.06em}
+.unlocked .lock-chip{background:var(--accent);color:var(--accent-ink)}
+.lock-chip .ico{width:12px;height:12px}
+@media (prefers-reduced-motion: reduce){ .brand-wrap.nudge,.lockbtn.pulse{animation:none} }
+.actions{display:flex;gap:8px;padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel)}
+.actions .primary{flex:1}
+
+
+/* ---------- project name, slide strip, to-do fields, menu, projects ---------- */
+.brand-l{display:grid;gap:5px;min-width:0}
+.proj-name{font:12px/1.3 var(--font-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.strip-list{display:flex;gap:8px;overflow-x:auto;padding:4px 3px;min-width:0;flex:0 1 auto;scrollbar-width:thin}
+.tab{position:relative;flex:none;height:60px;border:1px solid var(--line);border-radius:5px;background:var(--panel);padding:0;cursor:pointer;overflow:hidden;color:var(--muted)}
+.tab img{display:block;width:100%;height:100%;object-fit:cover}
+.tab .ph{display:grid;place-items:center;height:100%;font:10px var(--font-mono)}
+.tab .num{position:absolute;left:3px;bottom:3px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--fg);color:var(--panel);font:600 10.5px/17px var(--font-mono);text-align:center}
+.tab[aria-selected="true"]{outline:2px solid var(--fg);outline-offset:2px}
+.strip-add{flex:none;height:60px;padding:0 14px;border:1px dashed var(--muted);border-radius:6px;background:transparent;color:var(--fg);font-size:13px;cursor:pointer;white-space:nowrap}
+.strip-add:hover:not(:disabled){border-color:var(--fg);border-style:solid}
+.strip-add:disabled{opacity:.4;cursor:not-allowed}
+.info-row{display:flex;gap:6px;align-items:center}
+.info-row input{flex:1}
+.info-x{flex:none;width:34px;height:38px;border:0;border-radius:8px;background:var(--field);color:var(--muted);font-size:16px;cursor:pointer}
+.info-x:hover{color:var(--fg)}
+#ev-info{gap:8px}
+.strip-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.strip-tools .pos{font:12px var(--font-mono);color:var(--muted)}
+.strip-tools .acts{display:flex;gap:6px;flex-wrap:wrap}
+.strip-tools .btn[disabled]{cursor:not-allowed;opacity:.35}
+.switch.inline{gap:8px;font-size:12.5px;color:var(--muted)}
+.strip.solo .strip-tools{margin-left:0}
+.actions{position:relative}
+.btn.more{min-width:46px;font-weight:600;letter-spacing:.05em}
+.menu{position:absolute;right:20px;bottom:calc(100% - 6px);background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 34px -12px var(--shadow);padding:6px;display:grid;min-width:230px;z-index:6}
+.menu button{border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:7px;font-size:13.5px;cursor:pointer;color:var(--fg)}
+.menu button:hover,.menu button:focus-visible{background:var(--field)}
+.proj-sheet{width:min(760px,100%);gap:22px;padding:20px}
+.proj-sheet h2{margin:0;font:600 18px/1.2 var(--font-ui)}
+.proj-sheet h3{margin:0 0 10px;font:500 11px/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.proj-sheet section{display:grid;gap:10px}
+.proj-sheet section > h3{margin:0}
+.proj-head{display:flex;gap:8px;align-items:center}
+.recent{display:grid;gap:6px}
+.rec{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel)}
+.rec.cur{border-color:var(--fg)}
+.rec-th{display:block;width:44px;height:55px;object-fit:cover;border-radius:4px;background:var(--field)}
+.rec .t{display:grid;gap:3px;min-width:0}
+.rec .t b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .t span{font:12px var(--font-mono);color:var(--muted)}
+.rec .acts{display:flex;gap:6px}
+.cur-tag{font:500 11px/1 var(--font-mono);letter-spacing:.06em;padding:5px 8px;border-radius:999px;background:var(--field);color:var(--muted)}
+.wrapf{flex-wrap:wrap}
+@media (max-width: 860px){
+  .strip-tools{margin-left:0;width:100%}
+  .proj-sheet{padding:16px}
+  .menu{right:16px}
+}
+
+/* ---------- stage ---------- */
+.stage{display:flex;flex-direction:column;min-width:0;min-height:0;padding:18px 28px 16px;gap:14px}
+.toolbar{display:flex;justify-content:flex-start;align-items:center;gap:10px;flex-wrap:wrap}
+.toolbar .seg{background:var(--panel)}
+.toolbar .seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel);box-shadow:none}
+.hint{font:12px var(--font-mono);color:var(--muted)}
+.wrap{flex:1;min-height:0;position:relative;display:grid;place-items:center}
+#cv{display:block;border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 18px 50px -18px var(--shadow);touch-action:none;cursor:grab;max-width:100%}
+#cv.drag{cursor:grabbing}
+#cv.on-circle{cursor:move}
+.drop{position:absolute;inset:0;display:grid;place-items:center;border:2px dashed var(--fg);border-radius:12px;background:color-mix(in srgb,var(--stage) 70%,transparent);font:500 13px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;pointer-events:none}
+.status{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;font:12px var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.status b{font-weight:500;color:var(--fg)}
+
+/* ---------- overlay + toast ---------- */
+.overlay{position:fixed;inset:0;background:rgba(10,10,8,.72);display:grid;place-items:center;padding:24px 16px;z-index:10}
+.sheet{background:var(--panel);border-radius:14px;padding:16px;display:grid;gap:12px;max-width:min(560px,100%);max-height:100%;overflow:auto}
+.sheet img{display:block;width:100%;height:auto;border-radius:4px}
+.sheet .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--panel);padding:10px 16px;border-radius:10px;font-size:13px;z-index:20;max-width:calc(100% - 32px)}
+
+@media (max-width: 860px){
+  html,body{height:auto}
+  .app{display:flex;flex-direction:column;height:auto}
+  .stage{order:0;padding:14px 16px 12px}
+  .panel{order:1;border-right:0;border-top:1px solid var(--line)}
+  .sections{overflow:visible}
+  .brand{padding:16px}
+  summary{padding:15px 16px}
+  .sec{padding:0 16px 18px}
+  .actions{position:sticky;bottom:0;padding-inline:16px}
+  .hint{display:none}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+
+<div class="app">
+  <aside class="panel" aria-label="Nastavení šablony">
+    <header class="brand">
+      <div class="brand-l">
+        <h1><span class="mark" aria-hidden="true">x/o</span>FAI Post Studio</h1>
+        <span class="proj-name" id="proj-name"></span>
+      </div>
+      <button class="btn small" id="btn-projects" type="button" aria-haspopup="dialog">Projekty</button>
+    </header>
+
+    <div class="sections">
+      <div class="kind-bar">
+        <div class="seg seg-lg" data-seg="kind" role="group" aria-label="Typ příspěvku">
+          <button type="button" data-value="post">Příspěvek</button>
+          <button type="button" data-value="event">Akce</button>
+        </div>
+        <p class="warn" id="date-warn" role="status" hidden></p>
+      </div>
+
+      <details open id="sec-inner">
+        <summary>Text snímku</summary>
+        <div class="sec">
+          <div class="ctl">
+            <span class="lbl">Rozvržení</span>
+            <div class="seg" data-seg="inner.layout" role="group" aria-label="Rozvržení snímku">
+              <button type="button" data-value="photo">Fotka + text</button>
+              <button type="button" data-value="small">Text + fotka</button>
+              <button type="button" data-value="text">Jen text</button>
+              <button type="button" data-value="full">Celá fotka</button>
+            </div>
+          </div>
+          <div class="ctl">
+            <label for="i-eyebrow2">Štítek</label>
+            <input type="text" id="i-eyebrow2" data-bind="inner.eyebrow" placeholder="Např. Co tě čeká" autocomplete="off">
+          </div>
+          <label class="switch" for="t-pill2">Zobrazit štítek<input type="checkbox" id="t-pill2" data-bind="inner.pill"></label>
+          <div class="ctl">
+            <label for="i-head2">Nadpis</label>
+            <textarea id="i-head2" rows="3" data-bind="inner.headline" placeholder="Např. Laboratoře, kde si *sáhneš* na techniku"></textarea>
+            <p class="note">Slovo v <strong>*hvězdičkách*</strong> se zvýrazní. Enter zalomí řádek.</p>
+          </div>
+          <div class="ctl">
+            <label for="i-body2">Text</label>
+            <textarea id="i-body2" rows="4" data-bind="inner.body" placeholder="Jedna myšlenka, pár vět"></textarea>
+          </div>
+          <p class="warn" id="text-warn2" role="status" hidden></p>
+          <div class="sub" id="ev-detail">
+            <label class="switch" for="t-event2">Ukázat podrobnosti akce<input type="checkbox" id="t-event2" data-bind="inner.event"></label>
+            <p class="note">Datum, místo, vstup a výzva. Stačí na jednom snímku, nejlépe hned na druhém.</p>
+          </div>
+          <div class="ctl">
+            <div class="ctl-head"><label for="r-size2">Velikost nadpisu</label><output for="r-size2"></output></div>
+            <input type="range" id="r-size2" min="48" max="140" step="1" data-bind="inner.size" data-fmt="px">
+          </div>
+          <p class="note">Písmo, zvýraznění a značka se berou z titulního snímku.</p>
+        </div>
+      </details>
+
+      <details open id="sec-text">
+        <summary>Text</summary>
+        <div class="sec">
+          <div class="ctl">
+            <span class="lbl">Rozvržení</span>
+            <div class="seg" data-seg="firstLayout" role="group" aria-label="Rozvržení prvního snímku">
+              <button type="button" data-value="cover">Titulka</button>
+              <button type="button" data-value="full">Celá fotka</button>
+              <button type="button" data-value="text">Jen text</button>
+            </div>
+          </div>
+          <div class="ctl">
+            <label for="i-eyebrow">Štítek</label>
+            <input type="text" id="i-eyebrow" data-bind="text.eyebrow" placeholder="Např. Přijímací řízení 2027" autocomplete="off">
+          </div>
+          <label class="switch" for="t-pill">Zobrazit štítek<input type="checkbox" id="t-pill" data-bind="text.pill"></label>
+          <div class="ctl">
+            <label for="i-head">Nadpis</label>
+            <textarea id="i-head" rows="3" data-bind="text.headline" placeholder="Např. Programuj *budoucnost* ve Zlíně"></textarea>
+            <p class="note">Slovo v <strong>*hvězdičkách*</strong> se zvýrazní. Enter zalomí řádek.</p>
+          </div>
+          <div class="ctl">
+            <label for="i-body">Popis</label>
+            <textarea id="i-body" rows="2" data-bind="text.body" placeholder="Jedna až dvě věty"></textarea>
+            <p class="note">Enter zalomí řádek, prázdný řádek udělá mezeru.</p>
+          </div>
+          <p class="warn" id="text-warn" role="status" hidden></p>
+          <label class="switch" for="t-arrow">Šipka „dál“ pod textem<input type="checkbox" id="t-arrow" data-bind="text.arrow"></label>
+          <div class="ctl">
+            <div class="ctl-head"><label for="r-size">Velikost nadpisu</label><output for="r-size"></output></div>
+            <input type="range" id="r-size" min="48" max="170" step="1" data-bind="text.size" data-fmt="px">
+          </div>
+          <div class="ctl">
+            <span class="lbl">Zvýraznění</span>
+            <div class="seg" data-seg="text.accent" role="group" aria-label="Styl zvýraznění">
+              <button type="button" data-value="teal">Barva</button>
+              <button type="button" data-value="marker">Bílý fix</button>
+              <button type="button" data-value="invert">Inverze</button>
+              <button type="button" data-value="ink">Žádné</button>
+            </div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-head"><label for="r-shift">Svislý posun</label><output for="r-shift"></output></div>
+            <input type="range" id="r-shift" min="-1" max="1" step="0.01" data-bind="text.shift" data-fmt="signed">
+          </div>
+          <label class="switch" for="t-avoid">Text uhýbá kruhu<input type="checkbox" id="t-avoid" data-bind="text.avoid"></label>
+          <div class="two">
+            <div class="ctl">
+              <label for="i-brand">Značka</label>
+              <input type="text" id="i-brand" data-bind="text.brand" autocomplete="off">
+            </div>
+            <div class="ctl">
+              <label for="i-footer">Web pod značkou</label>
+              <input type="text" id="i-footer" data-bind="text.footer" autocomplete="off">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details open id="sec-event">
+        <summary>Informace o akci</summary>
+        <div class="sec">
+          <div class="sub" id="event-ctl">
+            <div class="two">
+              <div class="ctl"><label for="i-ev-date">Datum</label><input type="text" id="i-ev-date" data-bind="event.date" placeholder="7. 10. 2026" autocomplete="off"></div>
+              <div class="ctl"><label for="i-ev-time">Čas</label><input type="text" id="i-ev-time" data-bind="event.time" placeholder="18:30" autocomplete="off"></div>
+            </div>
+            <div class="ctl"><label for="i-ev-place">Místo</label><input type="text" id="i-ev-place" data-bind="event.place" placeholder="Např. Radegastovna Rex" autocomplete="off"><p class="warn" id="place-warn" role="status" hidden></p></div>
+            <div class="ctl" id="ev-info">
+              <span class="lbl">Další údaje</span>
+              <div class="info-row" data-i="1"><input type="text" id="i-ev-info1" data-bind="event.info1" placeholder="Např. Týmy po 3–5 lidech" autocomplete="off" aria-label="Další údaj 1"><button class="info-x" type="button" data-x="1" aria-label="Odebrat řádek 1" title="Odebrat řádek">×</button></div>
+              <div class="info-row" data-i="2" hidden><input type="text" id="i-ev-info2" data-bind="event.info2" placeholder="Např. Vstupné 100 Kč" autocomplete="off" aria-label="Další údaj 2"><button class="info-x" type="button" data-x="2" aria-label="Odebrat řádek 2" title="Odebrat řádek">×</button></div>
+              <div class="info-row" data-i="3" hidden><input type="text" id="i-ev-info3" data-bind="event.info3" placeholder="Např. Registrace do 20. 9." autocomplete="off" aria-label="Další údaj 3"><button class="info-x" type="button" data-x="3" aria-label="Odebrat řádek 3" title="Odebrat řádek">×</button></div>
+              <div class="filebar"><button class="btn small" id="btn-info-add" type="button">+ Přidat řádek</button></div>
+              <p class="note">Každý řádek se ukáže pod místem, v tomto pořadí.</p>
+            </div>
+            <div class="two">
+              <div class="ctl"><label for="i-ev-host">Host</label><input type="text" id="i-ev-host" data-bind="event.host" placeholder="Jméno a titul" autocomplete="off"></div>
+              <div class="ctl"><label for="i-ev-role">Kdo to je</label><input type="text" id="i-ev-role" data-bind="event.role" placeholder="Pozice, obor" autocomplete="off"></div>
+            </div>
+            <div class="ctl"><label for="i-ev-cta">Výzva v příspěvku</label><input type="text" id="i-ev-cta" data-bind="event.cta" placeholder="Např. Registrace: odkaz v biu" autocomplete="off"></div>
+            <div class="ctl"><label for="i-ev-ctas">Výzva ve story</label><input type="text" id="i-ev-ctas" data-bind="event.ctaStory" placeholder="Např. Registrace přes odkaz níže" autocomplete="off"><p class="note">Pod textem ve story zůstává volné místo, kam můžeš v Instagramu přidat odkazovou nálepku.</p></div>
+            <label class="switch" for="t-ev-full">Vše i na prvním snímku postu<input type="checkbox" id="t-ev-full" data-bind="event.full"></label>
+            <p class="note">První snímek postu ukazuje jen hosta, datum a místo. Další údaje a výzva se ukážou na snímku s podrobnostmi a ve story; patří i do popisku.</p>
+            <div class="sub" id="detail-need" hidden>
+              <p class="warn">Další údaje a výzva teď nejsou na žádném snímku.</p>
+              <div class="filebar"><button class="btn small" id="btn-add-detail" type="button">Přidat snímek s podrobnostmi</button></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details open id="sec-logo">
+        <summary>Logo partnera</summary>
+        <div class="sec">
+          <label class="switch" for="t-logo">Zobrazit logo partnera<input type="checkbox" id="t-logo" data-bind="logo.on"></label>
+          <div class="sub" id="logo-ctl">
+            <div class="filebar">
+              <button class="btn small" id="btn-logo" type="button">Nahrát logo</button>
+              <span class="filename" id="logo-name">Zatím bez loga</span>
+            </div>
+            <div class="ctl"><label for="i-logo-label">Text nad logem</label><input type="text" id="i-logo-label" data-bind="logo.label" autocomplete="off"></div>
+            <div class="seg" data-seg="logo.tone" role="group" aria-label="Barva loga">
+              <button type="button" data-value="color">Původní barvy</button>
+              <button type="button" data-value="mono">Jednobarevné</button>
+            </div>
+            <p class="note">Nejlépe PNG s průhledným pozadím nebo SVG. Logo se umístí vpravo dolů na všech snímcích.</p>
+          </div>
+        </div>
+      </details>
+
+      <details open id="sec-photo">
+        <summary>Fotka</summary>
+        <div class="sec" id="photo-ctl">
+          <div class="filebar">
+            <button class="btn small" id="btn-upload" type="button">Nahrát fotku</button>
+            <button class="btn small" id="btn-same" type="button" hidden>Fotka z titulky</button>
+            <span class="filename" id="filename">Ukázková fotka</span>
+          </div>
+          <div class="ctl">
+            <div class="ctl-head"><label for="r-zoom">Přiblížení</label><output for="r-zoom"></output></div>
+            <input type="range" id="r-zoom" min="0.5" max="4" step="0.01" data-bind="zoom" data-fmt="x">
+          </div>
+          <div class="two">
+            <div class="ctl">
+              <div class="ctl-head"><label for="r-px">Vodorovně</label><output for="r-px"></output></div>
+              <input type="range" id="r-px" min="-1200" max="1200" step="1" data-bind="panX" data-fmt="px">
+            </div>
+            <div class="ctl">
+              <div class="ctl-head"><label for="r-py">Svisle</label><output for="r-py"></output></div>
+              <input type="range" id="r-py" min="-1600" max="1600" step="1" data-bind="panY" data-fmt="px">
+            </div>
+          </div>
+          <div class="filebar">
+            <button class="btn small" id="btn-center" type="button">Vycentrovat fotku</button>
+          </div>
+          <p class="note" id="photo-note">Nejrychleji fotku umístíš přímo v náhledu: nahoře zvol <strong>Táhnout fotku</strong> a posuň ji, kolečkem myši přibližuješ. Fotku můžeš do náhledu i přetáhnout nebo vložit přes Ctrl+V.</p>
+        </div>
+      </details>
+
+      <details open id="sec-ascii">
+        <summary>Znaky x / o</summary>
+        <div class="sec">
+          <div class="ctl">
+            <span class="lbl">Odstranit pozadí fotky</span>
+            <div class="seg" data-seg="mode" role="group" aria-label="Odstranit pozadí fotky">
+              <button type="button" data-value="key">Jednobarevné</button>
+              <button type="button" data-value="ai">Najít osobu</button>
+              <button type="button" data-value="png" id="seg-png">PNG</button>
+              <button type="button" data-value="none">Nechat</button>
+            </div>
+            <p class="note" id="mode-note"></p>
+            <p class="warn" id="mode-warn" role="status" hidden></p>
+          </div>
+          <div class="ctl">
+            <span class="lbl">Barva znaků</span>
+            <div class="swatches" data-seg="ascii.ink" role="group" aria-label="Barva znaků">
+              <button type="button" data-value="grafit"><span class="dot" style="--c:#1C1B18"></span>Základní</button>
+              <button type="button" data-value="teal"><span class="dot" style="--c:#007D9B"></span>Modrá</button>
+              <button type="button" data-value="duo"><span class="dot duo"></span>Dvoubarevná</button>
+              <button type="button" data-value="ton"><span class="dot" style="--c:#8A6800"></span>Okrová</button>
+              <button type="button" data-value="bila"><span class="dot" style="--c:#FFFFFF"></span>Bílá</button>
+            </div>
+          </div>
+          <details class="adv" id="ascii-adv">
+            <summary><span>Pokročilé nastavení</span><span class="adv-chip" id="adv-chip" hidden>upraveno</span></summary>
+            <div class="adv-body">
+              <div class="two" id="key-ctl">
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-tol">Citlivost odstranění</label><output for="r-tol"></output></div>
+                  <input type="range" id="r-tol" min="3" max="45" step="1" data-bind="keyTol">
+                </div>
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-soft">Měkkost hrany</label><output for="r-soft"></output></div>
+                  <input type="range" id="r-soft" min="2" max="40" step="1" data-bind="keySoft">
+                </div>
+              </div>
+              <div class="ctl">
+                <span class="lbl">Styl znaků</span>
+                <div class="seg" data-seg="ascii.style" role="group" aria-label="Styl znaků">
+                  <button type="button" data-value="halftone">Rastr</button>
+                  <button type="button" data-value="grid">Mřížka</button>
+                  <button type="button" data-value="scatter">Rozptyl</button>
+                </div>
+              </div>
+              <div class="filebar" id="seed-ctl">
+                <button class="btn small" id="btn-seed" type="button">Zamíchat rozptyl</button>
+              </div>
+              <div class="two">
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-con">Kontrast</label><output for="r-con"></output></div>
+                  <input type="range" id="r-con" min="0.6" max="2.4" step="0.05" data-bind="ascii.contrast" data-fmt="x">
+                </div>
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-abr">Jas</label><output for="r-abr"></output></div>
+                  <input type="range" id="r-abr" min="-0.4" max="0.6" step="0.01" data-bind="ascii.bright" data-fmt="signed">
+                </div>
+              </div>
+              <div class="two">
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-fade">Rozplynutí okrajů</label><output for="r-fade"></output></div>
+                  <input type="range" id="r-fade" min="0" max="1" step="0.01" data-bind="ascii.fade" data-fmt="pct">
+                </div>
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-focus">Soustředit ke kruhu</label><output for="r-focus"></output></div>
+                  <input type="range" id="r-focus" min="0" max="1" step="0.01" data-bind="ascii.focus" data-fmt="pct">
+                </div>
+              </div>
+              <div class="two">
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-split">Poměr x a o</label><output for="r-split"></output></div>
+                  <input type="range" id="r-split" min="0.2" max="0.9" step="0.01" data-bind="ascii.split" data-fmt="pct">
+                </div>
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-cut">Vynechat světlé</label><output for="r-cut"></output></div>
+                  <input type="range" id="r-cut" min="0" max="0.6" step="0.01" data-bind="ascii.cutoff" data-fmt="pct">
+                </div>
+              </div>
+              <div class="ctl">
+                <div class="ctl-head"><label for="r-ghost">Prosvítání fotky</label><output for="r-ghost"></output></div>
+                <input type="range" id="r-ghost" min="0" max="0.6" step="0.01" data-bind="ascii.ghost" data-fmt="pct">
+              </div>
+              <label class="switch" for="t-auto">Vytáhnout detail z tmavých fotek<input type="checkbox" id="t-auto" data-bind="ascii.auto"></label>
+              <label class="switch" for="t-inv">Znaky do světlých míst<input type="checkbox" id="t-inv" data-bind="ascii.invert"></label>
+              <div class="filebar">
+                <button class="btn small" id="btn-adv-reset" type="button">Vrátit výchozí</button>
+              </div>
+            </div>
+          </details>
+        </div>
+      </details>
+
+      <details id="sec-circle">
+        <summary>Kruh</summary>
+        <div class="sec">
+          <div class="filebar" id="circle-presets">
+            <button class="btn small" id="btn-top" type="button">Kruh nahoře</button>
+            <button class="btn small" id="btn-bottom" type="button">Kruh dole</button>
+          </div>
+          <div class="ctl" id="circle-geo">
+            <div class="ctl-head"><label for="r-cr">Velikost</label><output for="r-cr"></output></div>
+            <input type="range" id="r-cr" min="0.08" max="0.55" step="0.005" data-bind="circle.r" data-fmt="pct">
+          </div>
+          <div class="two" id="circle-pos">
+            <div class="ctl">
+              <div class="ctl-head"><label for="r-cx">Vodorovně</label><output for="r-cx"></output></div>
+              <input type="range" id="r-cx" min="0" max="1" step="0.005" data-bind="circle.x" data-fmt="pct">
+            </div>
+            <div class="ctl">
+              <div class="ctl-head"><label for="r-cy">Svisle</label><output for="r-cy"></output></div>
+              <input type="range" id="r-cy" min="0" max="1" step="0.005" data-bind="circle.y" data-fmt="pct">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>Barevná varianta</summary>
+        <div class="sec">
+          <div class="seg" data-seg="theme" role="group" aria-label="Barevná varianta">
+            <button type="button" data-value="yellow">Žlutá</button>
+            <button type="button" data-value="dark">Tmavá</button>
+          </div>
+        </div>
+      </details>
+
+      <details open id="sec-brand">
+        <summary>Vzhled značky <span class="lock-chip" id="lock-chip"><svg class="ico ico-closed" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><svg class="ico ico-open" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 4.9-.7"/></svg><span id="lock-chip-txt">Zamčeno</span></span></summary>
+        <div class="sec">
+          <div class="lockbar">
+            <p class="note" id="lock-note">Platí pro celou sérii příspěvků. Měň jen po domluvě, aby profil zůstal jednotný.</p>
+            <button class="btn small lockbtn" id="btn-lock" type="button" aria-pressed="false" aria-controls="brand-fields">
+              <svg class="ico ico-closed" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><svg class="ico ico-open" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 4.9-.7"/></svg>
+              <span id="btn-lock-txt">Odemknout</span>
+            </button>
+          </div>
+          <div class="brand-wrap" id="brand-wrap">
+            <fieldset id="brand-fields" disabled>
+              <legend class="sr">Nastavení vzhledu značky</legend>
+              <div class="two">
+                <div class="ctl">
+                  <label for="s-font">Písmo nadpisu</label>
+                  <select id="s-font" data-bind="text.font">
+                    <option value="Geist">Geist</option>
+                    <option value="Bricolage Grotesque">Bricolage Grotesque</option>
+                    <option value="Unbounded">Unbounded</option>
+                    <option value="Syne">Syne</option>
+                    <option value="Archivo">Archivo</option>
+                  </select>
+                </div>
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-weight">Tloušťka</label><output for="r-weight"></output></div>
+                  <input type="range" id="r-weight" min="200" max="900" step="50" data-bind="text.weight">
+                </div>
+              </div>
+              <div class="two">
+                <div class="ctl">
+                  <label for="s-mono">Písmo znaků x / o</label>
+                  <select id="s-mono" data-bind="ascii.font">
+                    <option value="Geist Mono">Geist Mono</option>
+                    <option value="JetBrains Mono">JetBrains Mono</option>
+                  </select>
+                </div>
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-cell">Velikost buňky</label><output for="r-cell"></output></div>
+                  <input type="range" id="r-cell" min="8" max="32" step="1" data-bind="ascii.cell" data-fmt="px">
+                </div>
+              </div>
+              <div class="ctl">
+                <div class="ctl-head"><label for="r-light">Světlost žluté</label><output for="r-light"></output></div>
+                <input type="range" id="r-light" min="0" max="1" step="0.01" data-bind="bg.light" data-fmt="pct">
+              </div>
+              <div class="two">
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-bgn">Zrno pozadí</label><output for="r-bgn"></output></div>
+                  <input type="range" id="r-bgn" min="0" max="1" step="0.01" data-bind="bg.grain" data-fmt="pct">
+                </div>
+                <div class="ctl">
+                  <div class="ctl-head"><label for="r-bgs">Velikost zrna</label><output for="r-bgs"></output></div>
+                  <input type="range" id="r-bgs" min="1" max="4" step="0.5" data-bind="bg.size" data-fmt="px1">
+                </div>
+              </div>
+              <div class="filebar">
+                <button class="btn small" id="btn-brand-reset" type="button">Vrátit výchozí vzhled</button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <footer class="actions">
+      <button class="btn primary" id="btn-export" type="button">Stáhnout PNG</button>
+      <button class="btn" id="btn-set" type="button" title="Stáhne post i story najednou v jednom souboru ZIP">Post + story</button>
+      <button class="btn more" id="btn-more" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="more-menu" aria-label="Další možnosti">⋯</button>
+      <div class="menu" id="more-menu" role="menu" hidden>
+        <button type="button" role="menuitem" id="btn-one">Jen tento snímek (PNG)</button>
+        <button type="button" role="menuitem" id="btn-view">Zobrazit obrázek k uložení</button>
+        <button type="button" role="menuitem" id="btn-save-file2">Uložit projekt do souboru</button>
+      </div>
+    </footer>
+  </aside>
+
+  <main class="stage">
+    <div class="toolbar">
+      <div class="seg" data-seg="format" role="group" aria-label="Formát">
+        <button type="button" data-value="4:5">4:5 post</button>
+        <button type="button" data-value="3:4">3:4</button>
+        <button type="button" data-value="1:1">1:1</button>
+        <button type="button" data-value="9:16">9:16 story</button>
+      </div>
+      <div class="seg" data-seg="dragMode" role="group" aria-label="Co posouvá tažení v náhledu" id="drag-seg">
+        <button type="button" data-value="photo">Táhnout fotku</button>
+        <button type="button" data-value="circle">Táhnout kruh</button>
+      </div>
+    </div>
+    <div class="strip" id="strip">
+      <div class="strip-list" id="strip-list" role="tablist" aria-label="Snímky karuselu"></div>
+      <button class="strip-add" id="btn-add" type="button">+ Snímek</button>
+      <div class="strip-tools">
+        <span class="pos" id="slide-pos"></span>
+        <span class="acts" id="slide-acts">
+          <button class="btn small" id="btn-left" type="button" aria-label="Posunout snímek doleva">←</button>
+          <button class="btn small" id="btn-right" type="button" aria-label="Posunout snímek doprava">→</button>
+          <button class="btn small" id="btn-dup" type="button">Duplikovat</button>
+          <button class="btn small" id="btn-del" type="button">Smazat</button>
+        </span>
+        <label class="switch inline" for="t-num" id="num-ctl">Číslovat<input type="checkbox" id="t-num" data-bind="numbering"></label>
+      </div>
+    </div>
+    <div class="wrap" id="wrap">
+      <canvas id="cv" width="1080" height="1350" tabindex="0" aria-label="Náhled příspěvku. Šipky posouvají fotku, Shift a šipky posouvají kruh."></canvas>
+      <div class="drop" id="drop" hidden>Pusť fotku</div>
+    </div>
+    <div class="status" id="status"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" role="dialog" aria-label="Hotový obrázek">
+    <img id="ov-img" alt="Vygenerovaný příspěvek">
+    <div class="row">
+      <p class="note">Obrázek ulož pravým tlačítkem, na telefonu podržením prstu.</p>
+      <button class="btn small" id="ov-close" type="button">Zavřít</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="proj-ov" hidden>
+  <div class="sheet proj-sheet" role="dialog" aria-modal="true" aria-labelledby="proj-title">
+    <div class="row">
+      <h2 id="proj-title">Projekty</h2>
+      <div class="proj-head">
+        <button class="btn small primary" id="btn-new" type="button">Nový příspěvek</button>
+        <button class="btn small" id="proj-close" type="button">Zavřít</button>
+      </div>
+    </div>
+    <section>
+      <h3>Rozpracované</h3>
+      <div class="recent" id="recent"></div>
+      <p class="note" id="recent-note"></p>
+    </section>
+    <section>
+      <h3>Soubor</h3>
+      <div class="filebar wrapf">
+        <button class="btn small" id="btn-save-file" type="button">Uložit projekt do souboru</button>
+        <button class="btn small" id="btn-open-file" type="button">Otevřít soubor projektu</button>
+      </div>
+      <p class="note">Soubor obsahuje texty i fotky. Pošli ho kolegovi nebo ke schválení, otevře ho tady přes Otevřít soubor projektu.</p>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<input type="file" id="file" accept="image/*" hidden>
+<input type="file" id="logo-file" accept="image/*" hidden>
+<input type="file" id="proj-file" accept=".json,application/json" hidden>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= constants ================= */
+const FORMATS = { '4:5':[1080,1350], '3:4':[1080,1440], '1:1':[1080,1080], '9:16':[1080,1920] };
+const INK = '#1C1B18';
+const INKS = {
+  grafit:{ x:'#1C1B18', o:'#1C1B18' },
+  teal:  { x:'#007D9B', o:'#007D9B' },
+  duo:   { x:'#1C1B18', o:'#007D9B' },
+  bila:  { x:'#FFFFFF', o:'#FFFFFF' },
+  ton:   { x:'#1C1B18', o:'#8A6800' },
+};
+const ACCENT = { teal:'#007D9B' };
+const FAI = '#FECB00';
+const BG = { darkTR:'#D9AC00', midTR:'#FFD426', lightTR:'#FFE680', darkBL:'#A88600', midBL:'#F2BD00', lightBL:'#FFD53D' };
+const HEAD_W = { 'Geist':[100,900], 'Bricolage Grotesque':[200,800], 'Unbounded':[200,900], 'Syne':[400,800], 'Archivo':[100,900] };
+const MONO_W = { 'Geist Mono':[100,900], 'JetBrains Mono':[100,800] };
+const STORE_KEY = 'fai-post-studio-v1';
+
+const DEFAULTS = {
+  format:'4:5', slide:'cover', dragMode:'photo', theme:'yellow',
+  zoom:1, panX:0, panY:0,
+  pos:{ cover:{ zoom:1, panX:0, panY:0 }, inner:{ zoom:1, panX:0, panY:0 }, 'cover-story':{ zoom:1, panX:0, panY:0, set:false }, 'inner-story':{ zoom:1, panX:0, panY:0, set:false } },
+  circle:{ x:0.77, y:0.23, r:0.395 },
+  mode:'key', keyTol:14, keySoft:12,
+  ascii:{ style:'halftone', ink:'grafit', cell:22, contrast:1.3, bright:0, split:0.5, cutoff:0.12, fade:0.6, focus:0, ghost:0.1, font:'Geist Mono', seed:7, auto:true, invert:false },
+  circ:{ tone:'color', sat:0.6, contrast:1.1, bright:0, clarity:0.35, grain:0, ring:false, cutout:false },
+  text:{ avoid:true, arrow:true, pill:true, eyebrow:'Přijímací řízení 2027', headline:'Programuj\n*budoucnost*\nve Zlíně', body:'Bakalářské a magisterské obory na Fakultě aplikované informatiky UTB.', brand:'FAI UTB', footer:'fai.utb.cz', font:'Geist', size:104, weight:600, accent:'teal', shift:0.35 },
+  kind:'post',
+  event:{ on:false, date:'', time:'', place:'', entry:'', info1:'', info2:'', info3:'', host:'', role:'', cta:'', ctaStory:'', full:false, style:'lines' },
+  logo:{ on:false, label:'Za podpory', tone:'color' },
+  inner:{ event:false, layout:'photo', cont:false, eyebrow:'', headline:'', body:'', counter:'', size:84, pill:true },
+  bg:{ light:0.58, grain:0.4, size:1.5 },
+  brandRev:2,
+  slides:[], cur:0, numbering:false, firstLayout:'cover',
+  project:{ id:'', created:0 },
+};
+/* settings that define the look of the whole series; locked behind "Vzhled značky" */
+const BRAND_PATHS = ['text.font', 'text.weight', 'ascii.font', 'ascii.cell', 'bg.light', 'bg.grain', 'bg.size'];
+
+const clone = o => JSON.parse(JSON.stringify(o));
+function merge(base, extra){
+  if (!extra || typeof extra !== 'object') return base;
+  for (const k of Object.keys(base)) {
+    if (!(k in extra)) continue;
+    if (base[k] && typeof base[k] === 'object') merge(base[k], extra[k]);
+    else if (typeof extra[k] === typeof base[k]) base[k] = extra[k];
+  }
+  return base;
+}
+let saved = null;
+try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const MODES = ['key', 'ai', 'png', 'none'], MAX_SLIDES = 20;
+/* a carousel slide after the cover: its own texts, layout, photo and framing */
+function innerSlide(src){
+  src = src || {};
+  const inner = merge(clone(DEFAULTS.inner), src.inner);
+  const pi = src.pos || {};
+  return { id:typeof src.id === 'string' ? src.id : uid('s'), type:'inner', photo:typeof src.photo === 'string' ? src.photo : null,
+    mode:MODES.includes(src.mode) ? src.mode : 'key', inner,
+    pos:{ inner:merge({ zoom:1, panX:0, panY:0 }, pi.inner), 'inner-story':merge({ zoom:1, panX:0, panY:0, set:false }, pi['inner-story']) } };
+}
+function normSlides(raw){
+  const out = [];
+  if (Array.isArray(raw)) for (const sl of raw) {
+    if (!sl || typeof sl !== 'object') continue;
+    if (!out.length) out.push({ id:typeof sl.id === 'string' ? sl.id : uid('s'), type:'cover', photo:typeof sl.photo === 'string' ? sl.photo : null, mode:MODES.includes(sl.mode) ? sl.mode : 'key' });
+    else out.push(innerSlide(sl));
+  }
+  if (!out.length) out.push({ id:uid('s'), type:'cover', photo:null, mode:'key' });
+  return out.slice(0, MAX_SLIDES);
+}
+/* saved data (any version) -> a complete state; slide 1 is always the cover */
+function buildState(raw){
+  const st = merge(clone(DEFAULTS), raw);
+  // older projects had one "Vstup" field: it becomes the first info line
+  if (st.event.entry && !st.event.info1 && !st.event.info2 && !st.event.info3) st.event.info1 = st.event.entry;
+  st.event.entry = '';
+  if (!st.project.id) st.project = { id:uid('j'), created:Date.now() };
+  st.slides = normSlides(raw && raw.slides);
+  if (raw && !Array.isArray(raw.slides)) {
+    // before carousels: one cover and one inner setup, the photo was never kept
+    st.slides[0].photo = 'sample';
+    st.slides[0].mode = raw.mode === 'ai' || raw.mode === 'none' ? raw.mode : 'key';
+    // the framing on screen lived only in zoom/panX/panY: put it in its slot
+    st.pos[(raw.slide === 'inner' ? 'inner' : 'cover') + (st.format === '9:16' ? '-story' : '')] = { zoom:st.zoom, panX:st.panX, panY:st.panY, set:true };
+    const ri = raw.inner || {}, V5H = 'Laboratoře, kde si\n*sáhneš* na techniku', V5B = 'Robotika, umělá inteligence, kyberbezpečnost i vývoj softwaru. Sem patří konkrétní obsah dalšího snímku.';
+    const used = (typeof ri.headline === 'string' && ri.headline !== V5H) || (typeof ri.body === 'string' && ri.body !== V5B);
+    if (raw.slide === 'inner' || used) {
+      st.slides.push(innerSlide({ inner:raw.inner, photo:'sample', pos:{ inner:st.pos.inner, 'inner-story':st.pos['inner-story'] } }));
+    }
+    st.cur = raw.slide === 'inner' && st.slides.length > 1 ? 1 : 0;
+  }
+  if (!raw) { st.slides[0].photo = 'sample'; st.pos.cover = { zoom:1, panX:22, panY:-252 }; }
+  if (typeof fixCirc === 'function') fixCirc(st);
+  st.cur = Math.max(0, Math.min(st.slides.length - 1, st.cur | 0));
+  return st;
+}
+let S = buildState(saved);
+/* the photo stays as shot (only a safety net, no grain): older saved photo tweaks are dropped */
+function fixCirc(st){ st.circ = clone(DEFAULTS.circ); return st; }
+fixCirc(S);
+function brandDefaults(){ for (const p of BRAND_PATHS) setPath(p, getPath(p, DEFAULTS)); }
+if (saved && saved.brandRev !== DEFAULTS.brandRev) { brandDefaults(); S.brandRev = DEFAULTS.brandRev; }
+let lastKey = null;
+
+/* ================= dom ================= */
+const $ = s => document.querySelector(s);
+const cv = $('#cv');
+const ctx = cv.getContext('2d');
+const LS_OK = 'letterSpacing' in CanvasRenderingContext2D.prototype;
+
+/* ================= helpers ================= */
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+function hexRgb(h){ const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mix(a, b, t){ const A = hexRgb(a), B = hexRgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; }
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const gauss = r => (r() + r() + r() - 1.5) * 2;
+function hash(i, j, s){ let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263) + Math.imul(s, 982451653)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+function makeCanvas(w, h){ const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+const scratch = {};
+function scratchCanvas(key, w, h, opts){
+  let c = scratch[key];
+  if (!c) { c = scratch[key] = document.createElement('canvas'); c._ctx = c.getContext('2d', opts); }
+  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  return c;
+}
+function roundRect(c, x, y, w, h, r){
+  r = Math.min(r, h / 2, w / 2);
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+function setLS(c, px){ if (LS_OK) c.letterSpacing = px + 'px'; }
+let toastTimer = 0;
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, ms || 3200); }
+
+/* ================= photo pipeline ================= */
+const P = { id:null, maskSig:'', img:null, w:0, h:0, work:null, lum:null, alpha:null, hasAlpha:false, gray:null, mask:null, masked:null, maskedSmall:null, grayC:null, grayCMasked:null, rgba:null, lumBlur:null, removed:0, name:'' };
+const WORK_MAX = 1800;
+const PHOTOS = new Map();   // photo id -> { img, name, blob }
+const BASES = new Map();    // photo id -> analysed photo, most recently used last
+const AIMASK = new Map();   // photo id -> person mask
+const BASE_MAX = matchMedia('(max-width: 860px)').matches ? 2 : 4;
+function clearP(){ Object.assign(P, { id:null, maskSig:'', edge:null, img:null, w:0, h:0, work:null, lum:null, alpha:null, hasAlpha:false, gray:null, mask:null, masked:null, maskedSmall:null, grayC:null, grayCMasked:null, rgba:null, lumBlur:null, removed:0, name:'' }); }
+function baseFor(id){
+  let b = BASES.get(id);
+  if (b) { BASES.delete(id); BASES.set(id, b); return b; }
+  b = computeBase(PHOTOS.get(id).img);
+  BASES.set(id, b);
+  while (BASES.size > BASE_MAX) BASES.delete(BASES.keys().next().value);
+  return b;
+}
+const maskSig = () => S.mode + '|' + S.keyTol + '|' + S.keySoft;
+/* make the current slide's photo the active one; resolves when its cut-out is ready */
+function activatePhoto(opts){
+  opts = opts || {};
+  const sl = S.slides[S.cur], id = sl && sl.photo, ph = id && PHOTOS.get(id);
+  if (!ph) { maskJob++; aiBusy = false; clearP(); updatePhotoUI(); updateModeUI(); return Promise.resolve(); }
+  if (P.id !== id) {
+    const base = baseFor(id);
+    Object.assign(P, base, { id, name:ph.name, mask:null, maskSig:'', grayC:base.graded || null, grayCMasked:null });
+    if (!base.graded) { buildGrayC(); base.graded = P.grayC; }   // the colour grade depends only on the photo
+    buildMasked();
+  }
+  if (P.hasAlpha && opts.fresh) S.mode = 'png';
+  else if (S.mode === 'png' && !P.hasAlpha) S.mode = 'key';
+  sl.mode = S.mode;
+  updatePhotoUI();
+  if (P.maskSig === maskSig() && P.masked) { updateModeUI(); return Promise.resolve(); }
+  return rebuildMask();
+}
+function updatePhotoUI(){
+  const sl = S.slides[S.cur], inner = S.slide === 'inner', cov = S.slides[0].photo;
+  $('#filename').textContent = P.img ? P.name : inner ? 'Snímek zatím nemá fotku' : 'Zatím bez fotky';
+  $('#seg-png').disabled = !P.hasAlpha;
+  $('#btn-same').hidden = !inner || !cov || !PHOTOS.has(cov) || (sl && sl.photo === cov);
+}
+function computeBase(img){
+  const s = Math.min(1, WORK_MAX / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+  const w = Math.round((img.naturalWidth || img.width) * s), h = Math.round((img.naturalHeight || img.height) * s);
+  const work = makeCanvas(w, h);
+  const wc = work.getContext('2d', { willReadFrequently:true });
+  wc.imageSmoothingQuality = 'high';
+  wc.drawImage(img, 0, 0, w, h);
+  const d = wc.getImageData(0, 0, w, h).data;
+  const n = w * h, lum = new Uint8ClampedArray(n), alpha = new Uint8ClampedArray(n);
+  let transparent = 0;
+  for (let i = 0; i < n; i++) {
+    const o = i * 4;
+    lum[i] = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2];
+    alpha[i] = d[o + 3];
+    if (d[o + 3] < 245) transparent++;
+  }
+  const lumBlur = blurLum(lum, w, h);
+  const gray = makeCanvas(w, h), gc = gray.getContext('2d');
+  const gd = gc.createImageData(w, h);
+  for (let i = 0; i < n; i++) { const o = i * 4, v = lum[i] + 0.9 * (lum[i] - lumBlur[i]); gd.data[o] = gd.data[o + 1] = gd.data[o + 2] = v; gd.data[o + 3] = alpha[i]; }
+  gc.putImageData(gd, 0, 0);
+  const hasAlpha = transparent > n * 0.01;
+  return { img, w, h, work, lum, alpha, rgba:d, lumBlur, hasAlpha, gray, edge:hasAlpha ? null : edgeColor(d, w, h) };
+}
+/* the colour along the photo's border: fills the circle when the photo is zoomed out below 1× */
+function edgeColor(d, w, h){
+  const R = [], G = [], B = [], bw = Math.max(1, Math.round(Math.min(w, h) * 0.02)), step = Math.max(1, Math.round((w + h) / 400));
+  const take = (x, y) => { const o = (y * w + x) * 4; R.push(d[o]); G.push(d[o + 1]); B.push(d[o + 2]); };
+  for (let x = 0; x < w; x += step) for (let k = 0; k < bw; k++) { take(x, k); take(x, h - 1 - k); }
+  for (let y = 0; y < h; y += step) for (let k = 0; k < bw; k++) { take(k, y); take(w - 1 - k, y); }
+  const med = a => { a.sort((p, q) => p - q); return a[a.length >> 1] | 0; };
+  return `rgb(${med(R)},${med(G)},${med(B)})`;
+}
+
+function boxBlurH(src, dst, w, h, r){
+  const iarr = 1 / (r + r + 1);
+  for (let y = 0; y < h; y++) {
+    const row = y * w; let acc = src[row] * (r + 1);
+    for (let j = 0; j < r; j++) acc += src[row + Math.min(j, w - 1)];
+    for (let x = 0; x < w; x++) {
+      acc += src[row + Math.min(x + r, w - 1)] - src[row + Math.max(x - r - 1, 0)];
+      dst[row + x] = acc * iarr;
+    }
+  }
+}
+function boxBlurV(src, dst, w, h, r){
+  const iarr = 1 / (r + r + 1);
+  for (let x = 0; x < w; x++) {
+    let acc = src[x] * (r + 1);
+    for (let j = 0; j < r; j++) acc += src[Math.min(j, h - 1) * w + x];
+    for (let y = 0; y < h; y++) {
+      acc += src[Math.min(y + r, h - 1) * w + x] - src[Math.max(y - r - 1, 0) * w + x];
+      dst[y * w + x] = acc * iarr;
+    }
+  }
+}
+function blurLum(lum, w, h){
+  const a = Float32Array.from(lum), b = new Float32Array(a.length);
+  const r = Math.max(2, Math.round(Math.max(w, h) / 70));
+  for (let k = 0; k < 2; k++) { boxBlurH(a, b, w, h, r); boxBlurV(b, a, w, h, r); }
+  return a;
+}
+/* The circle and the full-photo layout show the photo exactly as uploaded: no colour, tone or grain
+   changes. The author prepares the photo before upload; the x / o halftone is the template's only styling. */
+function buildGrayC(){
+  if (!P.work) return;
+  P.grayC = P.work;
+  buildGrayCMasked();
+}
+function buildGrayCMasked(){
+  if (!P.grayC || !S.circ.cutout) { P.grayCMasked = null; return; }
+  const c = makeCanvas(P.w, P.h), x = c.getContext('2d');
+  x.drawImage(P.grayC, 0, 0);
+  if (P.mask) { x.globalCompositeOperation = 'destination-in'; x.imageSmoothingQuality = 'high'; x.drawImage(P.mask, 0, 0, P.w, P.h); }
+  P.grayCMasked = c;
+}
+function buildMasked(){
+  const c = makeCanvas(P.w, P.h), x = c.getContext('2d', { willReadFrequently:true });
+  x.drawImage(P.gray, 0, 0);
+  if (P.mask) { x.globalCompositeOperation = 'destination-in'; x.imageSmoothingQuality = 'high'; x.drawImage(P.mask, 0, 0, P.w, P.h); }
+  P.masked = c;
+  const s = Math.min(1, 480 / Math.max(P.w, P.h));
+  const sm = makeCanvas(P.w * s, P.h * s), sx = sm.getContext('2d', { willReadFrequently:true });
+  sx.imageSmoothingQuality = 'high';
+  sx.drawImage(c, 0, 0, sm.width, sm.height);
+  P.maskedSmall = sm;
+  applyLevels();
+  buildGrayCMasked();
+  measureRemoved();
+}
+/* stretch the subject's own tonal range so dark or flat subjects still get x / o detail */
+function applyLevels(){
+  if (!S.ascii.auto) return;
+  const sm = P.maskedSmall, sx = sm.getContext('2d', { willReadFrequently:true });
+  const sd = sx.getImageData(0, 0, sm.width, sm.height).data;
+  const hist = new Float64Array(256); let tot = 0;
+  for (let i = 0, n = sm.width * sm.height; i < n; i++) { const a = sd[i * 4 + 3]; if (a < 20) continue; hist[sd[i * 4]] += a; tot += a; }
+  if (tot < 1) return;
+  const pick = q => { let acc = 0; for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= tot * q) return v; } return 255; };
+  const lo = pick(0.02), hi = Math.max(pick(0.98), lo + 24);
+  const lut = new Uint8ClampedArray(256);
+  let acc = 0;
+  for (let v = 0; v < 256; v++) {
+    acc += hist[v];
+    const lin = clamp((v - lo) / (hi - lo), 0, 1), eq = acc / tot;
+    lut[v] = (lin * 0.5 + eq * 0.5) * 255;
+  }
+  for (const cvs of [P.masked, P.maskedSmall]) {
+    const x = cvs.getContext('2d', { willReadFrequently:true }), id = x.getImageData(0, 0, cvs.width, cvs.height), d = id.data;
+    for (let i = 0; i < d.length; i += 4) { const v = lut[d[i]]; d[i] = d[i + 1] = d[i + 2] = v; }
+    x.putImageData(id, 0, 0);
+  }
+}
+function measureRemoved(){
+  const c = P.maskedSmall, x = c.getContext('2d', { willReadFrequently:true });
+  const d = x.getImageData(0, 0, c.width, c.height).data;
+  let gone = 0; const n = c.width * c.height;
+  for (let i = 0; i < n; i++) if (d[i * 4 + 3] < 128) gone++;
+  P.removed = gone / n;
+}
+
+/* ---- colour key: remove the backdrop that touches the photo edges ---- */
+const LIN = new Float32Array(256);
+for (let i = 0; i < 256; i++) { const c = i / 255; LIN[i] = c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+const fLab = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+function median(arr){ const a = Float32Array.from(arr).sort(); return a.length ? a[a.length >> 1] : 0; }
+
+function keyMask(tol, soft){
+  const s = Math.min(1, 440 / Math.max(P.w, P.h));
+  const w = Math.max(2, Math.round(P.w * s)), h = Math.max(2, Math.round(P.h * s)), n = w * h;
+  const c = makeCanvas(w, h), x = c.getContext('2d', { willReadFrequently:true });
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(P.work, 0, 0, w, h);
+  const d = x.getImageData(0, 0, w, h).data;
+  const L = new Float32Array(n), A = new Float32Array(n), B = new Float32Array(n), op = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const o = i * 4, r = LIN[d[o]], g = LIN[d[o + 1]], b = LIN[d[o + 2]];
+    const X = fLab((r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047);
+    const Y = fLab(r * 0.2126 + g * 0.7152 + b * 0.0722);
+    const Z = fLab((r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883);
+    L[i] = 116 * Y - 16; A[i] = 500 * (X - Y); B[i] = 200 * (Y - Z);
+    op[i] = d[o + 3] > 200 ? 1 : 0;
+  }
+  const bw = Math.max(2, Math.round(Math.min(w, h) * 0.03));
+  const sL = [], sA = [], sB = [];
+  for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) {
+    if (xx >= bw && xx < w - bw && yy >= bw && yy < h - bw) continue;
+    const i = yy * w + xx; if (!op[i]) continue;
+    sL.push(L[i]); sA.push(A[i]); sB.push(B[i]);
+  }
+  const mL = median(sL), mA = median(sA), mB = median(sB);
+  const dist = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const dl = (L[i] - mL) * 0.55, da = A[i] - mA, db = B[i] - mB; dist[i] = Math.sqrt(dl * dl + da * da + db * db); }
+  const lim = tol + soft;
+  const seen = new Uint8Array(n), q = new Int32Array(n); let qh = 0, qt = 0;
+  const push = i => { if (!seen[i] && dist[i] < lim) { seen[i] = 1; q[qt++] = i; } };
+  for (let xx = 0; xx < w; xx++) { push(xx); push((h - 1) * w + xx); }
+  for (let yy = 0; yy < h; yy++) { push(yy * w); push(yy * w + w - 1); }
+  while (qh < qt) {
+    const i = q[qh++], xx = i % w, yy = (i / w) | 0;
+    if (xx > 0) push(i - 1); if (xx < w - 1) push(i + 1);
+    if (yy > 0) push(i - w); if (yy < h - 1) push(i + w);
+  }
+  const a = new Float32Array(n);
+  const near = tol * 0.55;
+  for (let i = 0; i < n; i++) a[i] = seen[i] ? smooth((dist[i] - tol) / Math.max(1, soft)) : smooth((dist[i] - near) / Math.max(1, soft * 0.6));
+  return alphaToCanvas(blur3(a, w, h), w, h);
+}
+function blur3(a, w, h){
+  const o = new Float32Array(a.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let s = 0, c = 0;
+    for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue;
+      for (let dx = -1; dx <= 1; dx++) { const xx = x + dx; if (xx < 0 || xx >= w) continue; s += a[yy * w + xx]; c++; } }
+    o[y * w + x] = s / c;
+  }
+  return o;
+}
+function keptShare(c){
+  const d = c.getContext('2d', { willReadFrequently:true }).getImageData(0, 0, c.width, c.height).data;
+  let k = 0; const n = c.width * c.height;
+  for (let i = 0; i < n; i++) if (d[i * 4 + 3] > 128) k++;
+  return k / n;
+}
+function alphaToCanvas(a, w, h){
+  const c = makeCanvas(w, h), x = c.getContext('2d'), id = x.createImageData(w, h);
+  for (let i = 0; i < w * h; i++) { const o = i * 4; id.data[o] = id.data[o + 1] = id.data[o + 2] = 255; id.data[o + 3] = a[i] * 255; }
+  x.putImageData(id, 0, 0);
+  return c;
+}
+
+/* ---- AI person segmentation (MediaPipe selfie segmentation, bundled with the page) ---- */
+let segPromise = null;
+function withTimeout(p, ms, msg){ return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]); }
+function loadSeg(){
+  if (segPromise) return segPromise;
+  segPromise = withTimeout(new Promise((res, rej) => {
+    if (window.SelfieSegmentation) return res();
+    const s = document.createElement('script');
+    s.src = 'mp/selfie_segmentation.js';
+    s.onload = () => res(); s.onerror = () => rej(new Error('script'));
+    document.head.appendChild(s);
+  }).then(async () => {
+    const seg = new window.SelfieSegmentation({ locateFile: f => 'mp/' + f + (/\.(tflite|binarypb)$/.test(f) ? '.wasm' : '') });
+    seg.setOptions({ modelSelection: 0, selfieMode: false });
+    await seg.initialize();
+    return seg;
+  }), 45000, 'timeout');
+  segPromise.catch(() => { segPromise = null; });
+  return segPromise;
+}
+async function aiMask(src){
+  const s = Math.min(1, 768 / Math.max(src.w, src.h));
+  const iw = Math.round(src.w * s), ih = Math.round(src.h * s);
+  const inp = makeCanvas(iw, ih), ix = inp.getContext('2d');
+  ix.fillStyle = '#fff'; ix.fillRect(0, 0, iw, ih);
+  ix.drawImage(src.work, 0, 0, iw, ih);
+  const seg = await loadSeg();
+  const out = makeCanvas(iw, ih), ox = out.getContext('2d', { willReadFrequently:true });
+  await withTimeout(new Promise((res, rej) => {
+    seg.onResults(r => { try { ox.drawImage(r.segmentationMask, 0, 0, iw, ih); res(); } catch (e) { rej(e); } });
+    seg.send({ image: inp }).catch(rej);
+  }), 20000, 'timeout');
+  const d = ox.getImageData(0, 0, iw, ih).data, n = iw * ih;
+  let aMin = 255, aMax = 0;
+  for (let i = 0; i < n; i += 7) { const v = d[i * 4 + 3]; if (v < aMin) aMin = v; if (v > aMax) aMax = v; }
+  const useAlpha = aMax - aMin > 20;
+  const a = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const v = (useAlpha ? d[i * 4 + 3] : d[i * 4]) / 255; a[i] = smooth((v - 0.3) / 0.45); }
+  return alphaToCanvas(blur3(a, iw, ih), iw, ih);
+}
+
+let maskJob = 0, aiBusy = false;
+async function rebuildMask(){
+  if (!P.work) { updateModeUI(); return; }
+  const job = ++maskJob;
+  const mode = S.mode, pid = P.id, sig = maskSig();
+  if (mode === 'key') P.mask = keyMask(S.keyTol, S.keySoft);
+  else if (mode === 'ai') {
+    let m = AIMASK.get(pid) || null, err = null;
+    if (!m) {
+      aiBusy = true;
+      setModeNote('Hledám na fotce osobu… Poprvé to chvíli trvá.'); updateStatus();
+      try { m = await aiMask({ work:P.work, w:P.w, h:P.h }); } catch (e) { err = e; }
+      if (m && keptShare(m) >= 0.02) AIMASK.set(pid, m);
+      if (job !== maskJob) return;
+      aiBusy = false;
+    }
+    const kept = m ? keptShare(m) : 0;
+    if (err || kept < 0.02) {
+      S.mode = 'key'; S.slides[S.cur].mode = 'key'; syncAll();
+      P.mask = keyMask(S.keyTol, S.keySoft);
+      buildMasked(); P.maskSig = maskSig(); updateModeUI(); requestRender();
+      toast(err ? 'Hledání osoby se v tomhle prohlížeči nepodařilo spustit. Přepnul jsem na Jednobarevné.' : 'Na fotce jsem nenašel osobu. Přepnul jsem na Jednobarevné.');
+      if (err) console.warn('segmentation failed', err);
+      return;
+    }
+    P.mask = m;
+  } else P.mask = null;
+  if (job !== maskJob) return;
+  buildMasked();
+  P.maskSig = sig;
+  updateModeUI();
+  requestRender();
+}
+
+/* ================= layout ================= */
+function dims(){ return FORMATS[S.format] || FORMATS['4:5']; }
+function region(W, H){ const x = Math.round(W * 0.5); return { x, y:0, w:W - x, h:H }; }
+/* framing slots: cover / inner, each with its own story variant */
+let RENDER_STORY = false;
+function uiKey(){ return (S.slide === 'cover' ? 'cover' : 'inner') + (S.format === '9:16' ? '-story' : ''); }
+function posFor(base){
+  const live = { zoom:S.zoom, panX:S.panX, panY:S.panY }, ui = uiKey();
+  const key = base + (RENDER_STORY ? '-story' : '');
+  if (key === ui) return live;
+  const p = S.pos[key];
+  if (p && p.set !== false) return p;
+  return base === ui ? live : S.pos[base];   // story not framed yet: follow the post framing
+}
+function fitXform(ax, ay, base, pos, bx0, bx1, by0, by1){
+  const sc = base * pos.zoom, dw = P.w * sc, dh = P.h * sc;
+  let dx = ax + pos.panX - dw / 2, dy = ay + pos.panY - dh / 2;
+  if (bx1 > bx0) dx = clamp(dx, Math.min(bx1 - dw, bx0), Math.max(bx1 - dw, bx0));
+  if (by1 > by0) dy = clamp(dy, Math.min(by1 - dh, by0), Math.max(by1 - dh, by0));
+  return { sc, dx, dy, dw, dh, ax, ay };
+}
+/* story (9:16) reuses the post composition: same circle, a bit larger, below the top safe zone */
+function circleGeom(W, H){
+  if (H / W > 1.6) return { cx:S.circle.x * W, cy:230 + Math.min(S.circle.y, 0.3) * W * 1.05, r:S.circle.r * W * 0.98 };
+  return { cx:S.circle.x * W, cy:S.circle.y * H, r:S.circle.r * W };
+}
+/* cover: the photo always fills the circle (and its continuation onto slide 2) */
+function coverXform(W, H){
+  const R = region(W, H), g = circleGeom(W, H), cont = S.inner.cont;
+  const bx0 = Math.max(0, g.cx - g.r), bx1 = cont ? g.cx + g.r : Math.min(W, g.cx + g.r);
+  const by0 = Math.max(0, g.cy - g.r), by1 = Math.min(H, g.cy + g.r);
+  const base = Math.max(R.w / P.w, R.h / P.h, (bx1 - bx0) / P.w, (by1 - by0) / P.h);
+  return fitXform(R.x + R.w / 2, R.y + R.h / 2, base, posFor('cover'), bx0, bx1, by0, by1);
+}
+let innerScale = 1;   // set by the inner layout when the text needs more room
+function innerGeom(W, H){
+  const lay = S.inner.layout;
+  if (lay === 'photo') { const r = W * 0.39 * innerScale; return { cx:W * 0.68, cy:H * 0.26 - W * 0.39 + r, r }; }
+  if (lay === 'small') return { cx:W * 0.8, cy:H * 0.2, r:W * 0.26 };
+  return null;
+}
+/* the first slide can also be a full photo or text only; it then reads the cover texts and keeps the cover framing */
+let INNER_SLOT = 'inner';
+const FIRST_LAYOUTS = ['cover', 'full', 'text'];
+const firstAlt = () => S.slide === 'cover' && S.firstLayout !== 'cover' && FIRST_LAYOUTS.includes(S.firstLayout);
+function withFirst(fn){
+  const keep = S.inner, t = S.text;
+  S.inner = { layout:S.firstLayout, cont:false, eyebrow:t.eyebrow, pill:t.pill, headline:t.headline, body:t.body,
+    size:Math.round(t.size * 84 / 104), event:true, first:true, counter:'', arrow:t.arrow && !!(t.headline.trim() || t.body.trim()) };
+  INNER_SLOT = 'cover';
+  try { return fn(); } finally { S.inner = keep; INNER_SLOT = 'inner'; }
+}
+function innerXform(W, H, g){
+  const bx0 = Math.max(0, g.cx - g.r), bx1 = Math.min(W, g.cx + g.r), by0 = Math.max(0, g.cy - g.r), by1 = Math.min(H, g.cy + g.r);
+  return fitXform((bx0 + bx1) / 2, (by0 + by1) / 2, Math.max((bx1 - bx0) / P.w, (by1 - by0) / P.h), posFor(INNER_SLOT), bx0, bx1, by0, by1);
+}
+function fullXform(W, H){
+  return fitXform(W / 2, H / 2, Math.max(W / P.w, H / P.h), posFor(INNER_SLOT), 0, W, 0, H);
+}
+function activeXform(W, H){
+  if (!P.w) return null;
+  RENDER_STORY = S.format === '9:16';
+  const inner = () => {
+    if (S.inner.layout === 'full') return fullXform(W, H);
+    const g = innerGeom(W, H);
+    return g ? innerXform(W, H, g) : null;
+  };
+  if (S.slide === 'cover') return firstAlt() ? withFirst(inner) : coverXform(W, H);
+  return inner();
+}
+function settlePan(){
+  const [W, H] = dims(), T = activeXform(W, H);
+  if (!T) return;
+  S.panX = Math.round(T.dx + T.dw / 2 - T.ax);
+  S.panY = Math.round(T.dy + T.dh / 2 - T.ay);
+}
+function feather(x, y, R, H){
+  const f = S.ascii.fade;
+  const st = H / R.w > 3.2, fh = H * 0.16 * f + 1, fw = R.w * 0.6 * f + 1, fb = st ? Math.max(fh, H * 0.24) : fh, ft = st ? Math.max(fh, 330) : fh;
+  return smooth((x - R.x) / fw) * smooth((y - (st ? 120 : 0)) / ft) * smooth((H - y) / fb);
+}
+function focusFall(W){ return W * (0.12 + 0.55 * (1 - S.ascii.focus)); }
+function focusAt(x, y, W, H){
+  const fc = S.ascii.focus; if (fc <= 0) return 1;
+  const d = Math.hypot(x - S.circle.x * W, y - S.circle.y * H) - S.circle.r * W;
+  return 1 - fc * smooth(d / focusFall(W));
+}
+
+/* ================= theme ================= */
+const INKS_DARK = {
+  grafit:{ x:'#FECB00', o:'#FECB00' },
+  teal:  { x:'#4DB8D2', o:'#4DB8D2' },
+  duo:   { x:'#FECB00', o:'#4DB8D2' },
+  ton:   { x:'#FECB00', o:'#8A6800' },
+  bila:  { x:'#FFFFFF', o:'#FFFFFF' },
+};
+const THEMES = {
+  yellow:{ ink:'#1C1B18', accent:'#007D9B', markerBg:'#FFFFFF', markerFg:'#1C1B18', invertBg:'#1C1B18', invertFg:'#FECB00', inks:INKS, paper:'#EDE6D2', edge:'rgba(28,27,24,0.18)', ghost:'multiply' },
+  dark:  { ink:'#F4EFE3', accent:'#FECB00', markerBg:'#FFFFFF', markerFg:'#1C1B18', invertBg:'#FECB00', invertFg:'#1C1B18', inks:INKS_DARK, paper:'#2A2824', edge:'rgba(255,255,255,0.14)', ghost:'screen' },
+};
+let TH = THEMES.yellow;
+
+/* ================= background ================= */
+const cache = {};
+function bgNoise(W, H, size){
+  const key = 'n' + W + 'x' + H + '@' + size; if (cache[key]) return cache[key];
+  const c = makeCanvas(W, H), x = c.getContext('2d');
+  const sw = Math.ceil(W / size), sh = Math.ceil(H / size), s = makeCanvas(sw, sh), sx = s.getContext('2d');
+  const sd = sx.createImageData(sw, sh), r = mulberry32(11);
+  for (let i = 0; i < sw * sh; i++) { const v = 128 + gauss(r) * 34; sd.data[i * 4] = sd.data[i * 4 + 1] = sd.data[i * 4 + 2] = v; sd.data[i * 4 + 3] = 255; }
+  sx.putImageData(sd, 0, 0);
+  x.imageSmoothingEnabled = size > 1; x.imageSmoothingQuality = 'medium';
+  x.drawImage(s, 0, 0, W, H);
+  return (cache[key] = c);
+}
+function grainTile(){
+  if (cache.grain) return cache.grain;
+  const c = makeCanvas(256, 256), x = c.getContext('2d'), d = x.createImageData(256, 256), r = mulberry32(5);
+  for (let i = 0; i < 65536; i++) { const v = 128 + gauss(r) * 30; d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = v; d.data[i * 4 + 3] = 255; }
+  x.putImageData(d, 0, 0);
+  return (cache.grain = c);
+}
+function bgColors(l){
+  return l < 0.5
+    ? [mix(BG.darkTR, BG.midTR, l * 2), mix(BG.darkBL, BG.midBL, l * 2)]
+    : [mix(BG.midTR, BG.lightTR, (l - 0.5) * 2), mix(BG.midBL, BG.lightBL, (l - 0.5) * 2)];
+}
+function drawBackground(c, W, H, glow){
+  const dark = S.theme === 'dark';
+  const [tr, bl] = dark ? ['#2B2924', '#131210'] : bgColors(S.bg.light);
+  const g = c.createLinearGradient(W, 0, 0, H);
+  g.addColorStop(0, tr); g.addColorStop(1, bl);
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const lg = c.createRadialGradient(W * 0.95, H * 0.03, 0, W * 0.95, H * 0.03, W * 0.85);
+  lg.addColorStop(0, dark ? 'rgba(255,236,170,0.07)' : 'rgba(255,246,205,0.30)'); lg.addColorStop(1, 'rgba(255,246,205,0)');
+  c.fillStyle = lg; c.fillRect(0, 0, W, H);
+  if (glow) {
+    const rg = c.createRadialGradient(glow.cx, glow.cy, 0, glow.cx, glow.cy, glow.r * 2.4);
+    rg.addColorStop(0, dark ? 'rgba(254,203,0,0.10)' : 'rgba(255,236,140,0.28)'); rg.addColorStop(1, 'rgba(255,236,140,0)');
+    c.fillStyle = rg; c.fillRect(0, 0, W, H);
+  }
+  if (S.bg.grain > 0) {
+    c.save(); c.globalCompositeOperation = dark ? 'overlay' : 'soft-light'; c.globalAlpha = S.bg.grain * (dark ? 0.35 : 0.8);
+    c.drawImage(bgNoise(W, H, S.bg.size), 0, 0); c.restore();
+  }
+}
+
+/* ================= photo layers ================= */
+function featherLayer(W, H, R){
+  const key = `f${W}x${H}|${S.ascii.fade}`; if (cache.fkey === key) return cache.fcv;
+  const c = makeCanvas(W, H), x = c.getContext('2d');
+  const fw = R.w * 0.6 * S.ascii.fade + 1, fh = H * 0.16 * S.ascii.fade + 1, fb = H / R.w > 3.2 ? Math.max(fh, H * 0.24) : fh;
+  const stops = (g) => { g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.25, 'rgba(0,0,0,0.156)'); g.addColorStop(0.5, 'rgba(0,0,0,0.5)'); g.addColorStop(0.75, 'rgba(0,0,0,0.844)'); g.addColorStop(1, 'rgba(0,0,0,1)'); };
+  const gx = x.createLinearGradient(R.x, 0, R.x + fw, 0); stops(gx);
+  x.fillStyle = gx; x.fillRect(R.x, 0, R.w, H);
+  x.globalCompositeOperation = 'destination-in';
+  const st = H / R.w > 3.2, ft = st ? Math.max(fh, 330) : fh, t0 = st ? 120 : 0;
+  const gt = x.createLinearGradient(0, t0, 0, t0 + ft); stops(gt);
+  x.fillStyle = gt; x.fillRect(0, 0, W, t0 + ft);
+  const gb = x.createLinearGradient(0, H, 0, H - fb); stops(gb);
+  x.fillStyle = gb; x.fillRect(0, H - fb, W, fb);
+  x.fillStyle = '#000'; x.fillRect(0, t0 + ft, W, Math.max(0, H - t0 - ft - fb));
+  cache.fkey = key; cache.fcv = c; return c;
+}
+let asciiHole = null;
+/* 1 deep inside the photo, falling to 0 at any photo edge that lies inside the canvas */
+const EDGE_FADE = 150, HOLE_SOFT = 120;
+/* 0 inside a kept-free area, rising to 1 over HOLE_SOFT px outside it */
+function holeFade(x, y){
+  if (!asciiHole) return 1;
+  let k = 1;
+  for (const r of asciiHole) {
+    const dx = Math.max(r.x - x, 0, x - (r.x + r.w)), dy = Math.max(r.y - y, 0, y - (r.y + r.h));
+    if (!dx && !dy) return 0;
+    k *= smooth(Math.hypot(dx, dy) / HOLE_SOFT);
+  }
+  return k;
+}
+function photoEdge(x, y, T, W, H){
+  const f = EDGE_FADE;
+  let k = 1;
+  if (T.dy > 1) k *= smooth((y - T.dy) / f);
+  if (T.dy + T.dh < H - 1) k *= smooth((T.dy + T.dh - y) / f);
+  if (T.dx > 1) k *= smooth((x - T.dx) / f);
+  if (T.dx + T.dw < W - 1) k *= smooth((T.dx + T.dw - x) / f);
+  return k;
+}
+function fadePhotoEdges(lx, T, W, H){
+  const f = EDGE_FADE, edges = [];
+  if (T.dy > 1) edges.push([0, T.dy, 0, T.dy + f]);
+  if (T.dy + T.dh < H - 1) edges.push([0, T.dy + T.dh, 0, T.dy + T.dh - f]);
+  if (T.dx > 1) edges.push([T.dx, 0, T.dx + f, 0]);
+  if (T.dx + T.dw < W - 1) edges.push([T.dx + T.dw, 0, T.dx + T.dw - f, 0]);
+  for (const [x0, y0, x1, y1] of edges) {
+    const g = lx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+    lx.globalCompositeOperation = 'destination-in'; lx.fillStyle = g; lx.fillRect(0, 0, W, H);
+  }
+}
+function drawGhost(c, W, H, R, T){
+  if (S.ascii.ghost <= 0.001) return;
+  const L = scratchCanvas('ghost', W, H), lx = L._ctx;
+  lx.globalCompositeOperation = 'source-over'; lx.clearRect(0, 0, W, H);
+  lx.imageSmoothingQuality = 'high';
+  lx.drawImage(P.masked, T.dx, T.dy, T.dw, T.dh);
+  lx.globalCompositeOperation = 'destination-in';
+  lx.drawImage(featherLayer(W, H, R), 0, 0);
+  fadePhotoEdges(lx, T, W, H);
+  lx.globalCompositeOperation = 'destination-in';
+  if (asciiHole && asciiHole.length) {
+    lx.save(); lx.globalCompositeOperation = 'destination-out'; lx.fillStyle = '#000';
+    if ('filter' in lx) lx.filter = `blur(${HOLE_SOFT / 2}px)`;
+    for (const r of asciiHole) lx.fillRect(r.x, r.y, r.w, r.h);
+    lx.restore();
+    lx.globalCompositeOperation = 'destination-in';
+  }
+  if (S.ascii.focus > 0) {
+    const cx = S.circle.x * W, cy = S.circle.y * H, r = S.circle.r * W, fall = focusFall(W);
+    const g = lx.createRadialGradient(cx, cy, r, cx, cy, r + fall);
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, `rgba(0,0,0,${1 - S.ascii.focus})`);
+    lx.fillStyle = g; lx.fillRect(0, 0, W, H);
+  }
+  c.save(); c.globalCompositeOperation = TH.ghost; c.globalAlpha = S.ascii.ghost * (S.theme === 'dark' ? 0.6 : 1); c.drawImage(L, 0, 0); c.restore();
+}
+function drawAscii(c, W, H, R, T){
+  const A = S.ascii, cell = A.cell, style = A.style, stagger = style !== 'grid';
+  const cols = Math.ceil(R.w / cell) + 1, rows = Math.ceil(R.h / cell) + 1, k = 2;
+  const sw = cols * k, sh = rows * k;
+  const sc = scratchCanvas('samp', sw, sh, { willReadFrequently:true }), sx = sc._ctx;
+  sx.clearRect(0, 0, sw, sh);
+  sx.imageSmoothingEnabled = true; sx.imageSmoothingQuality = 'high';
+  const f = k / cell;
+  const src = (T.dw * f) < P.maskedSmall.width * 1.3 ? P.maskedSmall : P.masked;
+  sx.drawImage(src, (T.dx - R.x) * f, (T.dy - R.y) * f, T.dw * f, T.dh * f);
+  const d = sx.getImageData(0, 0, sw, sh).data;
+  const ink = TH.inks[A.ink] || TH.inks.grafit;
+  const invert = A.invert !== (S.theme === 'dark');
+  const [wMin, wMax] = MONO_W[A.font] || [100, 900];
+  const buckets = new Map();
+  const cut = A.cutoff, split = A.split, con = A.contrast, seed = A.seed | 0;
+  const CG = circleGeom(W, H), moat = ringOuter(CG.r) + 14;
+  for (let j = 0; j < rows; j++) {
+    const off = stagger && (j & 1) ? 0.5 : 0;
+    for (let i = 0; i < cols; i++) {
+      const u = i + 0.5 + off, v = j + 0.5;
+      let x = R.x + u * cell, y = R.y + v * cell;
+      if (x > W + cell || y > H + cell) continue;
+      if (Math.hypot(x - CG.cx, y - CG.cy) < moat) continue;
+      const hk = holeFade(x, y); if (hk <= 0.02) continue;
+      const px = Math.round(u * k), py = Math.round(v * k);
+      let lum = 0, a = 0;
+      for (let dy = -1; dy <= 0; dy++) for (let dx = -1; dx <= 0; dx++) {
+        const X = clamp(px + dx, 0, sw - 1), Y = clamp(py + dy, 0, sh - 1), o = (Y * sw + X) * 4, al = d[o + 3];
+        a += al; lum += d[o] * al;
+      }
+      if (a < 6) continue;
+      lum = lum / a / 255; a = a / 1020;
+      const D = clamp(((invert ? lum : 1 - lum) - 0.5) * con + 0.5 - A.bright, 0, 1);
+      const w = D * a * feather(x, y, R, H) * focusAt(x, y, W, H) * photoEdge(x, y, T, W, H) * hk;
+      if (w <= cut) continue;
+      const wn = (w - cut) / (1 - cut + 1e-6);
+      const ch = w >= split ? 'x' : 'o';
+      let size, wt, alpha;
+      if (style === 'grid') {
+        size = cell * 1.08; wt = ch === 'x' ? 500 : 350; alpha = 0.2 + 0.8 * wn;
+      } else {
+        size = cell * (0.5 + 0.95 * Math.pow(wn, 0.85));
+        wt = 200 + 650 * wn; alpha = 0.4 + 0.6 * wn;
+        if (style === 'scatter') {
+          const r1 = hash(i, j, seed), r2 = hash(j, i, seed + 17), r3 = hash(i + 91, j + 7, seed);
+          if (r1 > 0.18 + wn * 1.25) continue;
+          const amp = cell * (0.25 + 0.9 * (1 - wn));
+          x += (r2 - 0.5) * amp; y += (r3 - 0.5) * amp;
+          if (r3 < 0.05) size *= 1.7;
+        }
+      }
+      wt = clamp(Math.round(wt / 50) * 50, wMin, wMax);
+      size = Math.max(4, Math.round(size * 2) / 2);
+      const key = wt + '|' + size;
+      let b = buckets.get(key); if (!b) buckets.set(key, b = []);
+      b.push(x, y + size * 0.27, alpha, ch === 'x' ? 1 : 0);
+    }
+  }
+  c.save();
+  c.textAlign = 'center'; c.textBaseline = 'alphabetic'; setLS(c, 0);
+  for (const [key, arr] of buckets) {
+    const [wt, size] = key.split('|');
+    c.font = `${wt} ${size}px "${A.font}", ui-monospace, monospace`;
+    for (let q = 0; q < arr.length; q += 4) {
+      const isX = arr[q + 3] === 1;
+      c.globalAlpha = arr[q + 2];
+      c.fillStyle = isX ? ink.x : ink.o;
+      c.fillText(isX ? 'x' : 'o', arr[q], arr[q + 1]);
+    }
+  }
+  c.restore();
+}
+function ringOuter(r){ return S.circ.ring ? r + 24 : r; }
+/* photo inside a circle: paper, photo, grain, hairline edge */
+function photoDisc(c, g, T){
+  c.save();
+  c.beginPath(); c.arc(g.cx, g.cy, g.r, 0, Math.PI * 2); c.clip();
+  c.fillStyle = P.edge || TH.paper; c.fillRect(g.cx - g.r, g.cy - g.r, g.r * 2, g.r * 2);
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(S.circ.cutout && P.grayCMasked ? P.grayCMasked : P.grayC, T.dx, T.dy, T.dw, T.dh);
+  if (S.circ.grain > 0) {
+    c.globalCompositeOperation = 'overlay'; c.globalAlpha = S.circ.grain * 0.55;
+    c.fillStyle = c.createPattern(grainTile(), 'repeat'); c.fillRect(g.cx - g.r, g.cy - g.r, g.r * 2, g.r * 2);
+  }
+  c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+  c.strokeStyle = TH.edge; c.lineWidth = 2;
+  c.beginPath(); c.arc(g.cx, g.cy, g.r - 1, 0, Math.PI * 2); c.stroke();
+  c.restore();
+  if (S.circ.ring) {
+    c.save(); c.strokeStyle = TH.ink; c.globalAlpha = 0.5; c.lineWidth = 2;
+    c.beginPath(); c.arc(g.cx, g.cy, g.r + 16, 0, Math.PI * 2); c.stroke();
+    c.restore();
+  }
+}
+function drawPlaceholder(c, W, H, g){
+  if (!PREVIEW) return;        // a hint on screen only, never in the downloaded image
+  c.save();
+  c.strokeStyle = TH.ink; c.globalAlpha = 0.35; c.setLineDash([10, 10]); c.lineWidth = 2;
+  c.beginPath(); c.arc(g.cx, g.cy, g.r, 0, Math.PI * 2); c.stroke();
+  c.setLineDash([]); c.globalAlpha = 0.65;
+  c.fillStyle = TH.ink; c.font = `500 26px "Geist Mono", ui-monospace, monospace`; c.textAlign = 'center';
+  setLS(c, 2); c.fillText('KLIKNI NEBO PŘETÁHNI FOTKU', clamp(g.cx, W * 0.3, W * 0.75), clamp(g.cy, 200, H - 200));
+  c.restore();
+}
+
+/* ================= text ================= */
+const NBSP = ' ';
+const ONE_LETTER = /^[ksvzouaiKSVZOUAI]$/;
+const wordText = w => w.map(r => r.t).join('');
+/* Czech typesetting: one-letter words stay with the next word, a date never splits ("7. 10. 2026"),
+   a dash or middle dot never starts a line. */
+function glueWords(words){
+  const out = [];
+  for (const w of words) {
+    const prev = out[out.length - 1], t = wordText(w);
+    const pt = prev ? wordText(prev) : '', last = pt.split(NBSP).pop();
+    const openQ = /„[^“]*$/.test(pt) && pt.split('„').pop().split(NBSP).length < 2;   // a short quoted name stays together
+    const unit = /\d$/.test(pt) && /^(Kč|EUR|€|%|h|min|km|m|kg|ks|let|lidí|osob)[.,:;!?]?$/.test(t);
+    const join = prev && (ONE_LETTER.test(last) || (/\d{1,2}\.$/.test(pt) && /^\d/.test(t)) || /^[–—·|]$/.test(t) || openQ || unit);
+    if (join) prev.push({ t:NBSP, acc:prev[prev.length - 1].acc }, ...w);
+    else out.push(w.slice());
+  }
+  return out;
+}
+/* what people type -> Czech typesetting: „quotes“, en dash in ranges and between words, ellipsis */
+function typo(s){
+  return s
+    .replace(/(^|[^\d.])(\d{1,2})\.\s?(\d{1,2})\.(?:\s?(\d{4}))?(?=$|[\s,;–-])/g, (m, pre, d, mo, y) =>
+      (+d >= 1 && +d <= 31 && +mo >= 1 && +mo <= 12) ? `${pre}${+d}. ${+mo}.${y ? ' ' + y : ''}` : m)
+    .replace(/\.\.\./g, '…')
+    .replace(/(^|[\s(\[{\/–—-])"/g, '$1„').replace(/"/g, '“')
+    .replace(/(\d)\s*[-–]\s*(\d)/g, '$1–$2')
+    .replace(/(\S) - (\S)/g, '$1 – $2');
+}
+/* a short last word never stands alone on the last line */
+function noWidow(words){
+  if (words.length >= 3 && wordText(words[words.length - 1]).length <= 5) {
+    const last = words.pop(), prev = words[words.length - 1];
+    prev.push({ t:NBSP, acc:prev[prev.length - 1].acc }, ...last);
+  }
+  return words;
+}
+const plainWords = s => noWidow(glueWords(typo(s).split(/[ \t]+/).filter(Boolean).map(t => [{ t, acc:false }])));
+function parseRuns(text){
+  const lines = [];
+  let acc = false;
+  for (const rawLine of typo(text).split('\n')) {
+    const words = [];
+    for (const rawWord of rawLine.split(/\s+/)) {
+      if (!rawWord) continue;
+      const runs = []; let buf = '';
+      for (const ch of rawWord) {
+        if (ch === '*') { if (buf) runs.push({ t:buf, acc }); buf = ''; acc = !acc; }
+        else buf += ch;
+      }
+      if (buf) runs.push({ t:buf, acc });
+      if (runs.length) words.push(runs);
+    }
+    lines.push(glueWords(words));
+  }
+  return lines;
+}
+/* greedy wrap; availFor(i) gives the width for local line i */
+function wrapRuns(c, words, availFor){
+  const lines = [], sp = c.measureText(' ').width;
+  let line = [], lw = 0;
+  for (const w of words) {
+    const ww = w.reduce((s, r) => s + c.measureText(r.t).width, 0);
+    const av = availFor(lines.length), need = line.length ? lw + sp + ww : ww;
+    if (line.length && need > av) { lines.push(line); line = [w]; lw = ww; }
+    else { line.push(w); lw = need; }
+  }
+  if (line.length) lines.push(line);
+  return lines;
+}
+/* Even rag: keep the greedy line count, then find the narrowest measure that still gives it,
+   so lines come out about equally long (no short middle line, no lone last word). */
+function wrapBalanced(c, words, availFor){
+  const greedy = wrapRuns(c, words, availFor);
+  if (greedy.length < 2) return greedy;
+  const n = greedy.length, sp = c.measureText(' ').width;
+  const lw = l => l.reduce((s, w, i) => s + (i ? sp : 0) + w.reduce((a, r) => a + c.measureText(r.t).width, 0), 0);
+  let lo = Math.max(...words.map(w => w.reduce((a, r) => a + c.measureText(r.t).width, 0))), hi = Math.max(...greedy.map(lw));
+  for (let i = 0; i < 14 && hi - lo > 1; i++) {
+    const mid = (lo + hi) / 2;
+    if (wrapRuns(c, words, j => Math.min(availFor(j), mid)).length <= n) hi = mid; else lo = mid;
+  }
+  return wrapRuns(c, words, j => Math.min(availFor(j), hi + 0.5));
+}
+function fillWords(c, line, x, y){
+  const sp = c.measureText(' ').width;
+  line.forEach((w, i) => { if (i) x += sp; const t = wordText(w); c.fillText(t, x, y); x += c.measureText(t).width; });
+}
+const MONO = s => `500 ${s}px "Geist Mono", ui-monospace, monospace`;
+const SANS = (wt, s) => `${wt} ${s}px "Geist", system-ui, sans-serif`;
+/* Type system on the 1080 px canvas (k scales it for story / text-only slides):
+   display = headline (size set per post) · LEAD 36/600 · TEXT 30/400 · MONO 22 caps.
+   Two sans weights only (400, 600); spacing on an 8 px rhythm; secondary text at one opacity. */
+const T_LEAD = 36, T_TEXT = 30, T_MONO = 22, LH_LEAD = 1.22, LH_TEXT = 1.4, DIM = 0.82, DIM_LABEL = 0.7;
+const GAP = { pill:40, body:32, block:40, rows:32, cta:32, arrow:40 };
+const LABEL_FS = T_MONO, PILL_FS = T_MONO, PILL_H = 50, LABEL_COL = 120;
+const isStory = (W, H) => H / W > 1.6;
+function frame(W, H){ const story = isStory(W, H); return { M:80, top:story ? 250 : 80, bot:story ? 270 : 80 }; }
+/* brand + web address, top-left */
+function drawLockup(c, W, H, x){
+  const t = S.text, { top } = frame(W, H);
+  c.save(); c.fillStyle = TH.ink; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  let y = top + T_MONO * 0.72;
+  if (t.brand) { c.font = MONO(T_MONO); setLS(c, 3); c.fillText(t.brand.toLocaleUpperCase('cs'), x, y); y += 32; }
+  if (t.footer) { c.font = MONO(T_MONO); setLS(c, 0.5); c.globalAlpha = DIM_LABEL; c.fillText(t.footer, x, y); }
+  c.restore();
+}
+/* the pill never runs past the column: tighter tracking, a smaller size, then whole words dropped with an ellipsis */
+const PILL_SLACK = 24;   // a pill may reach a little into the breathing room around the circle
+function fitPill(c, text, avail){
+  const label = text.toLocaleUpperCase('cs'), pad = 62;
+  avail += PILL_SLACK;
+  for (const [fs, ls] of [[PILL_FS, 2.2], [PILL_FS, 1.2], [PILL_FS - 2, 1]]) {
+    c.font = MONO(fs); setLS(c, ls);
+    if (c.measureText(label).width + pad <= avail) return { label, fs, ls, cut:false };
+  }
+  const fs = PILL_FS - 2, ls = 1;
+  c.font = MONO(fs); setLS(c, ls);
+  const full = c.measureText(label).width;
+  const max = Math.max(4, Math.floor(label.length * (avail - pad) / full));
+  const words = label.split(' ');
+  while (words.length > 1) {
+    words.pop();
+    const t = words.join(' ').replace(/[\s,;:–-]+$/, '') + '…';
+    if (c.measureText(t).width + pad <= avail) return { label:t, fs, ls, cut:true, max };
+  }
+  let t = label;
+  while (t.length > 1 && c.measureText(t + '…').width + pad > avail) t = t.slice(0, -1);
+  return { label:t + '…', fs, ls, cut:true, max };
+}
+function drawPill(c, x, y, pill){
+  c.save();
+  c.font = MONO(pill.fs); setLS(c, pill.ls);
+  const tw = c.measureText(pill.label).width;
+  c.strokeStyle = TH.ink; c.lineWidth = 1.8; c.globalAlpha = 0.9;
+  roundRect(c, x, y, tw + 62, PILL_H, PILL_H / 2); c.stroke();
+  c.globalAlpha = 1; c.fillStyle = TH.ink;
+  c.beginPath(); c.arc(x + 24, y + PILL_H / 2, 5.5, 0, Math.PI * 2); c.fill();
+  c.fillText(pill.label, x + 42, y + PILL_H / 2 + pill.fs * 0.36);
+  c.restore();
+}
+function drawArrow(c, x, y, r, down){
+  r = r || 24;
+  const cx = x + r, cy = y + r, a = r * 0.37;
+  c.save(); c.strokeStyle = TH.ink; c.lineWidth = 2; c.lineCap = 'round'; c.lineJoin = 'round';
+  c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
+  c.translate(cx, cy); if (down) c.rotate(Math.PI / 2);
+  c.beginPath(); c.moveTo(-a, 0); c.lineTo(a, 0); c.moveTo(a * 0.27, -a * 0.73); c.lineTo(a, 0); c.lineTo(a * 0.27, a * 0.73); c.stroke();
+  c.restore();
+}
+function headStyle(){
+  const t = S.text, [fMin, fMax] = HEAD_W[t.font] || [100, 900];
+  const wt = clamp(t.weight, fMin, fMax), wide = t.font === 'Unbounded' || t.font === 'Syne';
+  // 1.04: room for Czech caps with háček under a descender of the line above
+  return { font:s => `${wt} ${s}px "${t.font}", "Geist", system-ui, sans-serif`, track:s => (wide ? -0.02 : -0.035) * s, lh:s => s * (wide ? 1.08 : 1.04) };
+}
+/* Event data shared by all slides; empty fields are left out.
+   where: 'post' (feed cover, compact unless "full"), 'story', 'inner'. */
+function eventData(show, where){
+  if (!show || S.kind !== 'event') return null;
+  const e = S.event, compact = where === 'post' && !e.full;
+  const when = [e.date.trim(), e.time.trim()].filter(Boolean);
+  if (e.style === 'lines' && when.length) {
+    const pd = parseEventDate(typo(when[0]));
+    const hasDay = /[a-zá-ž]{3,}/i.test(when[0]);
+    if (pd && !hasDay) when[0] = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'][pd.date.getDay()] + ' ' + when[0];
+  }
+  let rows = [['Kdy', when, true], ['Kde', e.place.trim()], ...[e.info1, e.info2, e.info3].map(v => ['Info', (v || '').trim()])];
+  if (compact) rows = rows.slice(0, 2);
+  rows = rows.filter(r => Array.isArray(r[1]) ? r[1].length : r[1]);
+  const cta = compact ? '' : (where === 'story' ? e.ctaStory.trim() : e.cta.trim());
+  // the host is introduced on the first slide; the details card keeps to the practical information
+  const host = where === 'inner' ? '' : e.host.trim();
+  const d = { host, role:host ? e.role.trim() : '', rows, cta, down:where === 'story', style:e.style || 'table' };
+  return (d.host || d.rows.length || d.cta) ? d : null;
+}
+/* "7. 10. 2026", "Sobota 31. 10.", "31. října 2026" -> {d, m, y} */
+const MONTHS = ['ledna', 'února', 'března', 'dubna', 'května', 'června', 'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'];
+function parseEventDate(txt){
+  const t = (txt || '').toLocaleLowerCase('cs');
+  let m = t.match(/(\d{1,2})\.\s*(\d{1,2})\.(?:\s*(\d{4}))?/);
+  let d, mo, y;
+  if (m) { d = +m[1]; mo = +m[2]; y = m[3] ? +m[3] : null; }
+  else {
+    m = t.match(/(\d{1,2})\.\s*([a-zúůěščřžýáíé]+)(?:\s+(\d{4}))?/);
+    if (!m) return null;
+    const i = MONTHS.indexOf(m[2]); if (i < 0) return null;
+    d = +m[1]; mo = i + 1; y = m[3] ? +m[3] : null;
+  }
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+  const now = new Date();
+  if (!y) { y = now.getFullYear(); }
+  return { d, m:mo, y, date:new Date(y, mo - 1, d, 23, 59) };
+}
+/* what the last on-screen render had to give up (read by the text warning in the panel) */
+let LNOTE = null;
+function noteLayout(L, req){
+  if (!PREVIEW) return;
+  const place = (L.rows || []).find(r => r.label === 'Kde');
+  LNOTE = { ratio:L.size / Math.max(1, req), fits:L.fits, pillCut:!!(L.pill && L.pill.cut), pillMax:L.pill && L.pill.max, placeWrap:!!(place && place.ragged) };
+}
+/* Lays out pill, headline, body, event block and arrow inside a column whose right edge can be pushed in by circles. */
+/* Shrink order: headline a little, then the smaller type (event block, body), then the headline further. */
+function layoutBlock(c, o){
+  const k0 = o.k || 1, gentle = Math.round(o.size * 0.86);
+  let L;
+  for (const k of [k0, k0 * 0.92, k0 * 0.85]) {
+    L = layoutOnce(c, Object.assign({}, o, { k }), gentle);
+    if (L.fits) return L;
+  }
+  return layoutOnce(c, Object.assign({}, o, { k:k0 * 0.85 }), 40);
+}
+function layoutOnce(c, o, minSize){
+  const k = o.k || 1, hs = headStyle(), wordW = w => w.reduce((s, r) => s + c.measureText(r.t).width, 0);
+  const paras = parseRuns(o.headline || ''), eyebrow = (o.eyebrow || '').trim();
+  const bodyParas = (o.body || '').replace(/\s+$/, '').split('\n').map(plainWords);
+  const hasBody = bodyParas.some(p => p.length);
+  const ev = o.event, tFs = T_TEXT * k, tLh = tFs * LH_TEXT, lFs = T_LEAD * k, lLh = lFs * LH_LEAD, labW = LABEL_COL * k;
+  const colAt = (yt, yb) => o.avail(yt, yb);
+  // y is the top of the next element's caps; after each element it is set to that element's last baseline
+  const run = (size, y0) => {
+    const L = { size, k, ok:true, head:[], body:[], lh:hs.lh(size), eyebrow, y0 };
+    let y = y0;
+    if (eyebrow) { L.pill = fitPill(c, eyebrow, colAt(y0 - 8, y0 + PILL_H + 8)); y += PILL_H + GAP.pill; }
+    c.font = hs.font(size); setLS(c, hs.track(size));
+    const sp = c.measureText(' ').width;
+    L.headY = y;
+    const lineAvail = () => { const yt = y + L.head.length * L.lh; return colAt(yt - 6, yt + size * 0.82); };
+    for (const words of paras) {
+      if (!words.length) { L.head.push([]); continue; }
+      const start = L.head.length;
+      let line = [], lw = 0;
+      for (const w of words) {
+        const ww = wordW(w), av = lineAvail(), need = line.length ? lw + sp + ww : ww;
+        if (line.length && need > av) { L.head.push(line); line = [w]; lw = ww; if (ww > lineAvail()) L.ok = false; }
+        else { if (!line.length && ww > av) L.ok = false; line.push(w); lw = need; }
+      }
+      if (line.length) L.head.push(line);
+      // a typographer never leaves a short word ("Co", "Na") alone on a headline line: shrink instead
+      if (words.length > 1 && L.head.slice(start).some(l => l.length === 1 && wordText(l[0]).length <= 3)) L.ok = false;
+    }
+    L.headH = L.head.length ? (L.head.length - 1) * L.lh + size * 0.76 : 0;
+    y += L.headH;
+    if (hasBody) {
+      y += GAP.body * k; L.bodyY = y;
+      c.font = SANS(400, tFs); setLS(c, -0.2);
+      for (const para of bodyParas) {
+        if (!para.length) { L.body.push([]); continue; }
+        const base = L.body.length;
+        L.body.push(...wrapBalanced(c, para, i => { const yt = y + (base + i) * tLh; return Math.min(o.bodyW, colAt(yt - 4, yt + tFs)); }));
+      }
+      y += (L.body.length - 1) * tLh + tFs * 0.76;
+    }
+    if (ev) {
+      if (ev.host) {
+        y += GAP.block * k;
+        c.font = SANS(600, lFs); setLS(c, -0.3);
+        const nameLines = wrapBalanced(c, plainWords(ev.host), i => { const yt = y + i * lLh; return colAt(yt, yt + lFs); });
+        const nameBase = y + lFs * 0.76 + (nameLines.length - 1) * lLh;
+        c.font = SANS(400, tFs); setLS(c, -0.2);
+        const roleTop = nameBase + tLh - tFs * 0.76;
+        const roleLines = ev.role ? wrapBalanced(c, plainWords(ev.role), i => { const yt = roleTop + i * tLh; return colAt(yt, yt + tFs); }) : [];
+        L.host = { nameY:y + lFs * 0.76, roleY:nameBase + tLh, nameLines, roleLines, lFs, lLh, tFs, tLh };
+        y = roleLines.length ? nameBase + tLh * roleLines.length : nameBase;
+      }
+      if (ev.rows.length) {
+        y += GAP.rows * k;
+        const style = ev.style, lines_ = style === 'lines';
+        const pad = (lines_ ? 7 : 14) * k, colL = lines_ ? 0 : labW;
+        L.rows = []; L.rowStyle = style;
+        if (lines_) y += 18 * k;                       // room under the single rule
+        let prevLabel = '';
+        for (const [label, value, strong] of ev.rows) {
+          if (label === 'Info' && prevLabel !== 'Info' && prevLabel) y += 16 * k;   // conditions start a second group
+          prevLabel = label;
+          const big = strong && style !== 'uniform';
+          const fs = big ? lFs : tFs, lh = big ? lLh : tLh;
+          c.font = SANS(strong ? 600 : 400, fs); setLS(c, strong ? -0.3 : -0.2);
+          const w = colAt(y, y + lh * 2), vw = w - colL;
+          const sep = style === 'table' ? ' · ' : ', ';
+          let lines, parts_ = 1;
+          if (Array.isArray(value)) {
+            // date and time on one line, or stacked without the separator
+            const joined = plainWords(value.join(sep).replace(/ ,/g, ','));
+            lines = wrapRuns(c, joined, () => vw);
+            if (lines.length > 1) lines = [].concat(...value.map(v => wrapRuns(c, plainWords(v), () => vw)));
+          } else {
+            lines = wrapBalanced(c, plainWords(value), () => vw);
+            // a long place breaks after its comma ("Foyer FAI, / Nad Stráněmi 4511"), never inside a name
+            if (lines.length > 1 && /,\s/.test(value)) {
+              const bits = value.split(/,\s+/).map((s, i, a) => i < a.length - 1 ? s + ',' : s), parts = [];
+              const fits1 = s => wrapRuns(c, plainWords(s), () => vw).length === 1;
+              for (const s of bits) { const last = parts[parts.length - 1]; if (last && fits1(last + ' ' + s)) parts[parts.length - 1] = last + ' ' + s; else parts.push(s); }
+              const alt = [].concat(...parts.map(s => wrapBalanced(c, plainWords(s), () => vw)));
+              if (alt.length <= lines.length + 1) { lines = alt; parts_ = parts.length; }
+            }
+          }
+          const h = pad * 2 + (lines.length - 1) * lh + fs * 0.76;
+          L.rows.push({ y, h, w, label, lines, fs, lh, pad, strong, colL, dim:lines_ && !strong, ragged:lines.length > parts_ });
+          y += h;
+        }
+      }
+      if (ev.cta) {
+        y += GAP.cta * k;
+        c.font = SANS(400, tFs); setLS(c, -0.2);
+        const r = 24 * k;
+        const lines = wrapBalanced(c, plainWords(ev.cta), i => colAt(y + i * tLh, y + i * tLh + tFs) - labW);
+        const first = y + Math.max(tFs * 0.76, r + tFs * 0.3);
+        L.cta = { first, r, lines, down:ev.down, tFs, tLh };
+        y = first + (lines.length - 1) * tLh + Math.max(0, r - tFs * 0.3);
+      }
+    }
+    if (o.arrow && !(ev && ev.cta)) { y += GAP.arrow; L.arrowY = y; y += 48; }
+    L.total = y - y0;
+    return L;
+  };
+  let minTop = o.minTop;
+  if (eyebrow) {
+    c.font = MONO(PILL_FS); setLS(c, 2.2);
+    const colMax = o.avail(-1e6, -1e6 + 1);
+    // a label that fits the full column waits for room; one that never fits is shortened later
+    // and must not push the whole block below the circle
+    const natural = c.measureText(eyebrow.toLocaleUpperCase('cs')).width + 62;
+    const pillW = natural <= colMax + PILL_SLACK ? Math.min(natural, colMax) : colMax * 0.85;
+    while (minTop < o.maxY && o.avail(minTop - 8, minTop + PILL_H + 8) < pillW) minTop += 4;
+  }
+  const bottom = o.bottom != null ? o.bottom : Infinity;
+  const fits = L => L.ok && L.total <= o.maxH && L.y0 + L.total <= bottom + 1;
+  let size = o.size, L;
+  for (;;) {
+    L = run(size, o.place(0, minTop));
+    for (let i = 0; i < 3; i++) L = run(size, o.place(L.total, minTop));
+    L.fits = fits(L);
+    // a headline word wider than the column only ever shrinks the headline;
+    // the gentle limit applies when the block is merely too tall
+    if (L.fits || size <= 40 || (L.ok && size <= (minSize || 40))) break;
+    size -= 2;
+  }
+  return L;
+}
+function paintBlock(c, L, o){
+  const t = S.text, hs = headStyle(), x0 = o.x, k = L.k;
+  if (L.eyebrow) drawPill(c, x0, L.y0, L.pill || fitPill(c, L.eyebrow, 1e4));
+  c.save(); c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+  c.font = hs.font(L.size); setLS(c, hs.track(L.size));
+  const space = c.measureText(' ').width, optical = L.size * 0.045;
+  let by = L.headY + L.size * 0.76;
+  for (const line of L.head) {
+    let x = x0 - optical;
+    line.forEach((word, wi) => {
+      if (wi) x += space;
+      for (const r of word) {
+        const rw = c.measureText(r.t).width, boxed = r.acc && r.t !== NBSP && (t.accent === 'marker' || t.accent === 'invert');
+        if (boxed) { c.fillStyle = t.accent === 'marker' ? TH.markerBg : TH.invertBg; c.fillRect(x - L.size * 0.06, by - L.size * 0.8, rw + L.size * 0.1, L.size * 1.0); }
+        c.fillStyle = !r.acc ? TH.ink : t.accent === 'invert' ? TH.invertFg : t.accent === 'marker' ? TH.markerFg : t.accent === 'teal' ? TH.accent : TH.ink;
+        c.fillText(r.t, x, by);
+        x += rw;
+      }
+    });
+    by += L.lh;
+  }
+  const labW = LABEL_COL * k;
+  if (L.body.length) {
+    const fs = T_TEXT * k, lh = fs * LH_TEXT;
+    c.font = SANS(400, fs); setLS(c, -0.2);
+    c.fillStyle = TH.ink; c.globalAlpha = DIM + 0.04;
+    let yy = L.bodyY + fs * 0.76;
+    for (const line of L.body) { fillWords(c, line, x0, yy); yy += lh; }
+    c.globalAlpha = 1;
+  }
+  if (L.host) {
+    const h = L.host;
+    c.fillStyle = TH.ink;
+    c.font = SANS(600, h.lFs); setLS(c, -0.3);
+    let yy = h.nameY;
+    for (const line of h.nameLines) { fillWords(c, line, x0, yy); yy += h.lLh; }
+    c.font = SANS(400, h.tFs); setLS(c, -0.2); c.globalAlpha = DIM;
+    yy = h.roleY;
+    for (const line of h.roleLines) { fillWords(c, line, x0, yy); yy += h.tLh; }
+    c.globalAlpha = 1;
+  }
+  if (L.rows) {
+    const style = L.rowStyle, first = L.rows[0], last = L.rows[L.rows.length - 1];
+    c.strokeStyle = TH.ink; c.lineWidth = 1.5;
+    if (style === 'lines') {
+      // one rule above the block, no labels: date on top, place and entry quieter below
+      c.globalAlpha = 0.34; c.beginPath(); c.moveTo(x0, first.y - 18 * k); c.lineTo(x0 + first.w, first.y - 18 * k); c.stroke();
+    }
+    for (const r of L.rows) {
+      const base = r.y + r.pad + r.fs * 0.76;
+      if (style !== 'lines') {
+        if (style === 'table' || r !== first) { c.globalAlpha = 0.28; c.beginPath(); c.moveTo(x0, r.y); c.lineTo(x0 + r.w, r.y); c.stroke(); }
+        // the label sits on the baseline of the value's first line
+        c.globalAlpha = DIM_LABEL; c.fillStyle = TH.ink; c.font = MONO(Math.round(T_MONO * k * (style === 'uniform' ? 0.9 : 1))); setLS(c, 2.2);
+        c.fillText(r.label.toLocaleUpperCase('cs'), x0, base);
+      }
+      c.globalAlpha = r.dim ? DIM : 1; c.fillStyle = TH.ink; c.font = SANS(r.strong ? 600 : 400, r.fs); setLS(c, r.strong ? -0.3 : -0.2);
+      let yy = base;
+      for (const line of r.lines) { fillWords(c, line, x0 + r.colL, yy); yy += r.lh; }
+    }
+    if (style === 'table') { c.globalAlpha = 0.28; c.beginPath(); c.moveTo(x0, last.y + last.h); c.lineTo(x0 + last.w, last.y + last.h); c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  c.restore();
+  if (L.cta) {
+    // arrow in the label column, text on the value column, arrow centred on the first line
+    const a = L.cta, midY = a.first - a.tFs * 0.36;
+    drawArrow(c, x0, midY - a.r, a.r, a.down);
+    c.save(); c.fillStyle = TH.ink; c.font = SANS(400, a.tFs); setLS(c, -0.2); c.textBaseline = 'alphabetic';
+    let yy = a.first;
+    const tx = L.rowStyle === 'lines' ? x0 + a.r * 2 + 18 * k : x0 + labW;
+    for (const line of a.lines) { fillWords(c, line, tx, yy); yy += a.tLh; }
+    c.restore();
+  }
+  if (L.arrowY != null) drawArrow(c, x0, L.arrowY);
+}
+/* column width at a given line, narrowed by any circle (plus breathing room) */
+function availFn(M, baseW, circles, rects){
+  return (yt, yb) => {
+    let right = M + baseW;
+    for (const r of rects || []) if (yb > r.y0 && yt < r.y1) right = Math.min(right, r.x - 36);
+    for (const g of circles) {
+      const RA = g.r + 34;
+      if (yb < g.cy - RA || yt > g.cy + RA) continue;
+      const dy = (yt <= g.cy && yb >= g.cy) ? 0 : Math.min(Math.abs(yt - g.cy), Math.abs(yb - g.cy));
+      right = Math.min(right, g.cx - Math.sqrt(Math.max(0, RA * RA - dy * dy)));
+    }
+    return clamp(right - M, 160, baseW);
+  };
+}
+
+/* ================= partner logo ================= */
+const LOGO = { img:null, tinted:null, tintKey:'' };
+function logoBox(W, H){
+  if (S.kind !== 'event' || !S.logo.on) return null;
+  const { M, bot } = frame(W, H), story = isStory(W, H);
+  const maxH = story ? 84 : 70, maxW = story ? 300 : 270;
+  let w = 230, h = 70;
+  if (LOGO.img) {
+    const iw = LOGO.img.naturalWidth || LOGO.img.width || 300, ih = LOGO.img.naturalHeight || LOGO.img.height || 100;
+    const s = Math.min(maxW / iw, maxH / ih); w = iw * s; h = ih * s;
+  }
+  const label = S.logo.label.trim(), labelH = label ? 40 : 0;
+  const x = W - M - w, y = H - (story ? 340 : bot) - h;   // story: clear of the reply bar
+  return { x, y, w, h, label, top:y - labelH, left:Math.min(x, W - M - 260) };
+}
+function drawLogo(c, W, H, b){
+  if (!b) return;
+  const { M } = frame(W, H);
+  c.save();
+  if (b.label) {
+    c.fillStyle = TH.ink; c.globalAlpha = DIM_LABEL; c.font = MONO(T_MONO); setLS(c, 2.2); c.textAlign = 'right';
+    c.fillText(b.label.toLocaleUpperCase('cs'), W - M, b.y - 16);
+    c.globalAlpha = 1; c.textAlign = 'left';
+  }
+  if (LOGO.img) {
+    let src = LOGO.img;
+    if (S.logo.tone === 'mono') {
+      const key = `${Math.round(b.w)}x${Math.round(b.h)}|${TH.ink}`;
+      if (LOGO.tintKey !== key) {
+        const cv = makeCanvas(b.w * 2, b.h * 2), x = cv.getContext('2d');
+        x.drawImage(LOGO.img, 0, 0, cv.width, cv.height);
+        x.globalCompositeOperation = 'source-in'; x.fillStyle = TH.ink; x.fillRect(0, 0, cv.width, cv.height);
+        LOGO.tinted = cv; LOGO.tintKey = key;
+      }
+      src = LOGO.tinted;
+    }
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(src, b.x, b.y, b.w, b.h);
+  } else {
+    c.strokeStyle = TH.ink; c.globalAlpha = 0.45; c.lineWidth = 2; c.setLineDash([8, 7]);
+    roundRect(c, b.x, b.y, b.w, b.h, 10); c.stroke(); c.setLineDash([]);
+    c.globalAlpha = 0.7; c.fillStyle = TH.ink; c.font = MONO(18); setLS(c, 2); c.textAlign = 'center';
+    c.fillText('LOGO PARTNERA', b.x + b.w / 2, b.y + b.h / 2 + 6);
+  }
+  c.restore();
+}
+
+/* event stories keep STICKER_H free above the bottom margin for Instagram's link sticker (no on-screen hint) */
+let PREVIEW = false;
+const STICKER_H = 150;
+function drawStickerHint(){}
+
+/* ================= slides ================= */
+function renderCover(c, W, H){
+  const g = circleGeom(W, H), R = region(W, H), t = S.text, { M, top, bot } = frame(W, H);
+  const story = isStory(W, H), k = story ? 1.2 : 1, box = logoBox(W, H);
+  const circles = t.avoid ? [{ cx:g.cx, cy:g.cy, r:ringOuter(g.r) }] : [];
+  const lockH = top + 110;
+  const centre = H / 2 + t.shift * H * 0.22;
+  const colW = story ? W * 0.62 - M : W * 0.5 - M;
+  const sticker = story && S.kind === 'event';
+  const bottom = H - bot - (sticker ? STICKER_H : 0);
+  const rects = box ? [{ x:box.left, y0:box.top - 8, y1:H }] : [];
+  const o = {
+    headline:t.headline, eyebrow:t.pill ? t.eyebrow : '', body:t.body, arrow:t.arrow && !story && !!(t.headline.trim() || t.body.trim()), size:Math.round(t.size * k), k,
+    bodyW:colW * 0.95, event:eventData(true, story ? 'story' : 'post'),
+    avail:availFn(M, colW, circles, rects), maxH:(H - top - bot) * 0.84, minTop:lockH, maxY:H * 0.8, bottom,
+    // post: centred on the canvas; story: sits on the bottom safe line, full width under the circle
+    place:story ? (total, minTop) => Math.max(minTop, bottom - total)
+                : (total, minTop) => clamp(centre - total / 2, minTop, Math.max(minTop, H - bot - total)),
+  };
+  const L = layoutBlock(c, o);
+  noteLayout(L, o.size);
+  drawBackground(c, W, H, g);
+  asciiHole = [];
+  if (box) asciiHole.push({ x:box.left - 24, y:box.top - 24, w:W - box.left + 24, h:H - box.top + 24 });
+  if (story) asciiHole.push({ x:0, y:L.y0 - 44, w:M + colW + 40, h:H });
+  if (P.masked) {
+    const T = coverXform(W, H);
+    drawGhost(c, W, H, R, T);
+    drawAscii(c, W, H, R, T);
+    photoDisc(c, g, T);
+  } else drawPlaceholder(c, W, H, g);
+  asciiHole = null;
+  drawLockup(c, W, H, M);
+  paintBlock(c, L, Object.assign({ x:M }, o));
+  drawLogo(c, W, H, box);
+  if (sticker) drawStickerHint(c, W, H);
+}
+/* the part of the cover circle that ran off its right edge, shown on the left edge here */
+function continuation(W, H){
+  if (!S.inner.cont || !P.masked) return null;
+  const g = circleGeom(W, H);
+  const over = g.cx + g.r - W;
+  if (over < 24) return null;
+  return { cx:g.cx - W, cy:g.cy, r:g.r, over };
+}
+/* slide number "2/5": top-right on full photos, bottom-right otherwise, bottom-left when the partner logo takes that corner */
+function drawCounter(c, W, H, atTop, leftSide){
+  const { M, top, bot } = frame(W, H), N = S.slides.length;
+  if (!S.numbering || N < 2 || S.cur < 1) return;
+  c.save(); c.fillStyle = TH.ink; c.textAlign = leftSide ? 'left' : 'right'; c.font = MONO(T_MONO); setLS(c, 3);
+  c.fillText(`${S.cur + 1}/${N}`, leftSide ? M : W - M, atTop ? top + T_MONO * 0.72 : H - bot); c.restore();
+}
+/* full-bleed photo, white type over a soft bottom shade */
+function renderFull(c, W, H){
+  const n = S.inner, { M, top, bot } = frame(W, H), box = logoBox(W, H);
+  c.fillStyle = P.edge || '#1C1B18'; c.fillRect(0, 0, W, H);
+  if (P.masked) {
+    const T = fullXform(W, H);
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(P.grayC, T.dx, T.dy, T.dw, T.dh);
+    if (S.circ.grain > 0) { c.save(); c.globalCompositeOperation = 'overlay'; c.globalAlpha = S.circ.grain * 0.45; c.fillStyle = c.createPattern(grainTile(), 'repeat'); c.fillRect(0, 0, W, H); c.restore(); }
+  } else { const k = TH; TH = Object.assign({}, TH, { ink:'#FFFFFF' }); drawPlaceholder(c, W, H, { cx:W / 2, cy:H * 0.4, r:W * 0.3 }); TH = k; }
+  const gb = c.createLinearGradient(0, H * 0.32, 0, H);
+  gb.addColorStop(0, 'rgba(14,13,11,0)'); gb.addColorStop(0.45, 'rgba(14,13,11,0.55)'); gb.addColorStop(1, 'rgba(14,13,11,0.9)');
+  c.fillStyle = gb; c.fillRect(0, 0, W, H);
+  const gt = c.createLinearGradient(0, 0, 0, top + 170);
+  gt.addColorStop(0, 'rgba(14,13,11,0.45)'); gt.addColorStop(1, 'rgba(14,13,11,0)');
+  c.fillStyle = gt; c.fillRect(0, 0, W, top + 170);
+  const keep = TH;
+  TH = Object.assign({}, TH, { ink:'#FFFFFF', accent:'#FECB00', markerBg:'#FECB00', markerFg:'#1C1B18', invertBg:'#FECB00', invertFg:'#1C1B18' });
+  drawLockup(c, W, H, M);
+  drawCounter(c, W, H, true);
+  const sticker = n.first && isStory(W, H) && S.kind === 'event';
+  const zTop = H * 0.4, zBot = (box ? box.top - 34 : H - bot - 6) - (sticker ? STICKER_H : 0);
+  const k = isStory(W, H) ? 1.12 : 1;
+  const o = {
+    headline:n.headline, eyebrow:n.pill ? n.eyebrow : '', body:n.body, arrow:!!n.arrow && !isStory(W, H), size:Math.round(n.size * k), k, bodyW:W * 0.78,
+    event:eventData(n.event, n.first ? (isStory(W, H) ? 'story' : 'post') : 'inner'),
+    avail:availFn(M, W - 2 * M, []), maxH:zBot - zTop, minTop:zTop, maxY:H * 0.9,
+    place:(total, minTop) => clamp(zBot - total, minTop, Math.max(minTop, zBot - total)),
+  };
+  const L = layoutBlock(c, o);
+  noteLayout(L, o.size);
+  paintBlock(c, L, Object.assign({ x:M }, o));
+  drawLogo(c, W, H, box);
+  if (sticker) drawStickerHint(c, W, H);
+  TH = keep;
+}
+function renderInner(c, W, H){
+  if (S.inner.layout === 'full') return renderFull(c, W, H);
+  const n = S.inner, { M, top, bot } = frame(W, H), box = logoBox(W, H);
+  const cont = continuation(W, H);
+  const textOnly = n.layout === 'text', sticker = n.first && isStory(W, H) && S.kind === 'event';
+  const k = (textOnly ? 1.12 : 1) * (isStory(W, H) ? 1.12 : 1);
+  const anchor = textOnly ? 0.55 : 1;
+  const headSize = Math.round((textOnly ? n.size * 1.34 : n.size) * (isStory(W, H) ? 1.12 : 1));
+  const plan = scale => {
+    innerScale = scale;
+    const g = P.masked ? innerGeom(W, H) : null;
+    let zTop = top + 150, zBot = (box ? box.top - 40 : H - bot - 80) - (sticker ? STICKER_H : 0);
+    if (g) zTop = Math.max(zTop, n.layout === 'photo' ? g.cy + g.r + 56 : top + 150);
+    if (cont) {
+      const cTop = cont.cy - cont.r - 30, cBot = cont.cy + cont.r + 30;
+      if (cBot > zTop && cTop < zBot) {
+        if (zBot - cBot >= cTop - zTop) zTop = Math.max(zTop, cBot); else zBot = Math.min(zBot, cTop);
+      }
+    }
+    const circles = g ? [{ cx:g.cx, cy:g.cy, r:g.r }] : [];
+    const o = {
+      headline:n.headline, eyebrow:n.pill ? n.eyebrow : '', body:n.body, arrow:!!n.arrow && !isStory(W, H), size:headSize, k, bodyW:W * 0.8,
+      event:eventData(n.event, n.first ? (isStory(W, H) ? 'story' : 'post') : 'inner'),
+      avail:availFn(M, W - 2 * M, circles), maxH:Math.max(200, zBot - zTop), minTop:zTop, maxY:H * 0.85,
+      place:(total, minTop) => clamp(zTop + (zBot - zTop - total) * anchor, minTop, Math.max(minTop, zBot - total)),
+    };
+    return { g, o, L:layoutBlock(c, o) };
+  };
+  // "Fotka + text": the circle shrinks (keeping its top edge) until the headline keeps at least 3/4 of its size
+  let pl = plan(1);
+  if (n.layout === 'photo') {
+    for (const sc of [0.9, 0.8, 0.7, 0.62]) {
+      if (pl.L.fits && pl.L.size >= headSize * 0.75) break;
+      pl = plan(sc);
+    }
+  }
+  const { g, o, L } = pl;
+  noteLayout(L, headSize);
+  drawBackground(c, W, H, g || (cont ? { cx:0, cy:cont.cy, r:cont.r * 0.7 } : { cx:W * 0.9, cy:H * 0.1, r:W * 0.3 }));
+  if (cont) {
+    const T = coverXform(W, H);
+    photoDisc(c, cont, { dx:T.dx - W, dy:T.dy, dw:T.dw, dh:T.dh });
+  }
+  if (g) photoDisc(c, g, innerXform(W, H, g));
+  else if (n.layout !== 'text' && !P.masked) drawPlaceholder(c, W, H, innerGeom(W, H) || { cx:W * 0.7, cy:H * 0.3, r:W * 0.3 });
+  let lockX = M;
+  if (cont && cont.cy - cont.r < top + 70) {
+    const dy = Math.max(0, Math.abs(top + 20 - cont.cy));
+    const edge = cont.cx + Math.sqrt(Math.max(0, cont.r * cont.r - dy * dy));
+    lockX = Math.max(M, edge + 40);
+  }
+  drawLockup(c, W, H, lockX);
+  drawCounter(c, W, H, false, !!box);
+  paintBlock(c, L, Object.assign({ x:M }, o));
+  drawLogo(c, W, H, box);
+  if (sticker) drawStickerHint(c, W, H);
+}
+function render(c, W, H){
+  TH = THEMES[S.theme] || THEMES.yellow;
+  c.save();
+  c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+  if (S.slide === 'inner') renderInner(c, W, H);
+  else if (firstAlt()) withFirst(() => renderInner(c, W, H));
+  else renderCover(c, W, H);
+  c.restore();
+}
+let rafId = 0, EXPORTING = false, RENDERED = '';
+function requestRender(){
+  if (rafId || EXPORTING) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = 0; if (EXPORTING) return;
+    const [W, H] = dims();
+    PREVIEW = true; LNOTE = null; render(ctx, W, H); PREVIEW = false;
+    RENDERED = S.project.id + '|' + (S.slides[S.cur] ? S.slides[S.cur].id : '');
+    updateStatus(); updateTextWarn(); debounce('thumb', captureThumb, 450);
+  });
+}
+/* plain words: what the cut-out did to the photo, or null when there is nothing to say */
+function cutoutState(){
+  if (S.slide !== 'cover' || firstAlt() || !P.img || S.mode === 'none') return null;
+  if (S.mode === 'ai' && aiBusy) return 'busy';
+  if (!P.maskedSmall) return null;
+  return P.removed < 0.04 ? 'none' : P.removed > 0.92 ? 'all' : 'ok';
+}
+function updateStatus(){
+  const [W, H] = dims(), N = S.slides.length;
+  const fmt = { '4:5':'Příspěvek 4:5', '3:4':'Příspěvek 3:4', '1:1':'Čtverec 1:1', '9:16':'Story 9:16' }[S.format] || S.format;
+  const busy = S.mode === 'ai' && aiBusy ? '<span>hledám na fotce osobu…</span>' : '';
+  $('#status').innerHTML = `<span><b>${fmt}</b> · ${W} × ${H} px</span>${N > 1 ? `<span>snímek ${S.cur + 1} z ${N}</span>` : ''}${busy}`;
+}
+
+/* ================= canvas sizing ================= */
+function resizeCanvas(){
+  const [W, H] = dims();
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  fitCanvas(); requestRender();
+}
+function fitCanvas(){
+  const wrap = $('#wrap'), [W, H] = dims();
+  const narrow = matchMedia('(max-width: 860px)').matches;
+  const ww = wrap.clientWidth, wh = narrow ? Infinity : wrap.clientHeight;
+  const s = Math.min(ww / W, wh / H, 1);
+  cv.style.width = Math.floor(W * s) + 'px';
+  cv.style.height = Math.floor(H * s) + 'px';
+}
+new ResizeObserver(fitCanvas).observe($('#wrap'));
+
+/* ================= interaction ================= */
+function toCanvas(e){ const r = cv.getBoundingClientRect(), [W, H] = dims(); return { x:(e.clientX - r.left) * W / r.width, y:(e.clientY - r.top) * H / r.height }; }
+let drag = null;
+const circleMode = () => S.dragMode === 'circle' && S.slide === 'cover' && !firstAlt();
+/* no photo yet: a click on the dashed circle opens the file picker */
+cv.addEventListener('click', () => { if (!P.img && !(S.slide === 'inner' && S.inner.layout === 'text') && !(firstAlt() && S.firstLayout === 'text')) $('#file').click(); });
+cv.addEventListener('pointerdown', e => {
+  const [W, H] = dims();
+  if (!P.masked || (!circleMode() && !activeXform(W, H))) return;
+  const p = toCanvas(e);
+  if (circleMode()) drag = { type:'circle', ox:p.x - S.circle.x * W, oy:p.y - S.circle.y * H };
+  else drag = { type:'photo', sx:p.x, sy:p.y, px:S.panX, py:S.panY };
+  cv.setPointerCapture(e.pointerId); cv.classList.add('drag');
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const p = toCanvas(e), [W, H] = dims();
+  if (drag.type === 'circle') { S.circle.x = clamp((p.x - drag.ox) / W, 0, 1); S.circle.y = clamp((p.y - drag.oy) / H, 0, 1); }
+  else { S.panX = clamp(drag.px + p.x - drag.sx, -1600, 1600); S.panY = clamp(drag.py + p.y - drag.sy, -2000, 2000); }
+  requestRender();
+});
+const endDrag = () => { if (drag) { drag = null; cv.classList.remove('drag'); settlePan(); syncAll(); requestRender(); saveSoon(); } };
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+cv.addEventListener('wheel', e => {
+  const [W, H] = dims();
+  if (!P.masked) return;
+  if (circleMode()) {
+    e.preventDefault();
+    S.circle.r = clamp(S.circle.r * Math.exp(-e.deltaY * 0.0012), 0.08, 0.55);
+  } else {
+    const T = activeXform(W, H); if (!T) return;
+    e.preventDefault();
+    const p = toCanvas(e), z0 = S.zoom, z1 = clamp(z0 * Math.exp(-e.deltaY * 0.0015), 0.5, 4), f = z1 / z0;
+    const dx1 = p.x - (p.x - T.dx) * f, dy1 = p.y - (p.y - T.dy) * f;
+    S.zoom = z1; S.panX = dx1 + T.dw * f / 2 - T.ax; S.panY = dy1 + T.dh * f / 2 - T.ay;
+  }
+  settlePan(); syncAll(); requestRender(); saveSoon();
+}, { passive:false });
+cv.addEventListener('keydown', e => {
+  const step = e.altKey ? 2 : 12, [W, H] = dims();
+  const d = { ArrowLeft:[-1, 0], ArrowRight:[1, 0], ArrowUp:[0, -1], ArrowDown:[0, 1] }[e.key];
+  if (!d || !P.masked) return;
+  e.preventDefault();
+  if (circleMode() || (e.shiftKey && S.slide === 'cover')) { S.circle.x = clamp(S.circle.x + d[0] * step / W, 0, 1); S.circle.y = clamp(S.circle.y + d[1] * step / H, 0, 1); }
+  else { S.panX += d[0] * step; S.panY += d[1] * step; settlePan(); }
+  syncAll(); requestRender(); saveSoon();
+});
+
+/* ---- file input, drop, paste ---- */
+/* a new photo resets only this slide's framing (post and story) */
+function resetFraming(){
+  const k = S.slide === 'cover' ? 'cover' : 'inner';
+  S.pos[k] = { zoom:1, panX:0, panY:0 }; S.pos[k + '-story'] = { zoom:1, panX:0, panY:0, set:false };
+  S.zoom = 1; S.panX = 0; S.panY = 0; lastKey = uiKey();
+}
+function loadFile(file){
+  if (!file || !/^image\//.test(file.type)) { toast('Tohle není obrázek. Nahraj JPG, PNG nebo WebP.'); return; }
+  if (EXPORTING) return;
+  const url = URL.createObjectURL(file), img = new Image();
+  img.onload = () => {
+    const id = uid('p');
+    PHOTOS.set(id, { img, name:file.name || 'Fotka', blob:null });
+    stashSlide(); curSlide().photo = id; resetFraming();
+    const pr = activatePhoto({ fresh:true });
+    settlePan(); syncAll(); renderStrip(); requestRender(); saveSoon();
+    afterPhoto(pr);
+    persistPhoto(id, file, img, P.hasAlpha);
+  };
+  img.onerror = () => { toast('Tenhle formát prohlížeč neumí otevřít. Zkus JPG nebo PNG.'); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+$('#btn-upload').addEventListener('click', () => $('#file').click());
+$('#file').addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; });
+let dragDepth = 0;
+window.addEventListener('dragenter', e => { if ([...e.dataTransfer.types].includes('Files')) { dragDepth++; $('#drop').hidden = false; } });
+window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $('#drop').hidden = true; });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('#drop').hidden = true; const f = [...(e.dataTransfer.files || [])].find(f => /^image\//.test(f.type)); if (f) loadFile(f); });
+window.addEventListener('paste', e => {
+  const item = [...(e.clipboardData?.items || [])].find(i => i.kind === 'file' && /^image\//.test(i.type));
+  if (item) { e.preventDefault(); loadFile(item.getAsFile()); }
+});
+
+/* ================= controls binding ================= */
+function getPath(p, from){ return p.split('.').reduce((o, k) => o[k], from || S); }
+function setPath(p, v){ const ks = p.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; }
+
+function fmtVal(el, v){
+  switch (el.dataset.fmt) {
+    case 'px': return Math.round(v) + ' px';
+    case 'px1': return Number(v).toFixed(1) + ' px';
+    case 'x': return Number(v).toFixed(2) + '×';
+    case 'pct': return Math.round(v * 100) + ' %';
+    case 'signed': { const n = Math.round(v * 100); return (n > 0 ? '+' : '') + n; }
+    default: return String(v);
+  }
+}
+const syncers = [];
+document.querySelectorAll('[data-bind]').forEach(el => {
+  const path = el.dataset.bind;
+  const out = document.querySelector(`output[for="${el.id}"]`);
+  const sync = () => { const v = getPath(path); if (el.type === 'checkbox') el.checked = !!v; else if (document.activeElement !== el || el.type === 'range') el.value = v; if (out) out.textContent = fmtVal(el, v); };
+  syncers.push(sync);
+  el.addEventListener('input', () => {
+    const v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? parseFloat(el.value) : el.value;
+    setPath(path, v); if (out) out.textContent = fmtVal(el, v); changed(path);
+  });
+});
+document.querySelectorAll('[data-seg]').forEach(g => {
+  const path = g.dataset.seg;
+  const sync = () => g.querySelectorAll('button[data-value]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === String(getPath(path)))));
+  syncers.push(sync);
+  g.addEventListener('click', e => {
+    const b = e.target.closest('button[data-value]'); if (!b || b.disabled) return;
+    if (String(getPath(path)) === b.dataset.value) return;
+    setPath(path, b.dataset.value); sync(); changed(path);
+  });
+});
+function syncAll(){ syncers.forEach(f => f()); updateModeUI(); if (typeof updateInfoRows === 'function') updateInfoRows(); }
+
+const timers = {};
+function debounce(key, fn, ms){ clearTimeout(timers[key]); timers[key] = setTimeout(fn, ms); }
+/* store the live framing in its slot and load the new slot; a story slot starts as a copy of its post framing */
+function switchKey(from, to){
+  if (!from || from === to) return;
+  S.pos[from] = { zoom:S.zoom, panX:S.panX, panY:S.panY, set:true };
+  let p = S.pos[to];
+  if (!p || p.set === false) p = S.pos[to.replace('-story', '')] || { zoom:1, panX:0, panY:0 };
+  ({ zoom:S.zoom, panX:S.panX, panY:S.panY } = p);
+}
+function changed(path){
+  if (path === 'mode') { curSlide().mode = S.mode; rebuildMask(); }
+  else if (path === 'numbering') renderStrip();
+  else if (path === 'text.headline') debounce('pname', updateProjName, 300);
+  else if (path === 'keyTol' || path === 'keySoft') debounce('mask', rebuildMask, 90);
+  else if (['circ.contrast', 'circ.bright', 'circ.sat', 'circ.clarity', 'circ.tone'].includes(path)) { debounce('grayc', () => { buildGrayC(); requestRender(); }, 60); updateModeUI(); }
+  else if (path === 'slide' || path === 'format') { const nk = uiKey(); switchKey(lastKey, nk); lastKey = nk; if (path === 'format') resizeCanvas(); settlePan(); syncAll(); renderStrip(); }
+  else if (path === 'event.date') updateDateWarn();
+  else if (path === 'firstLayout') { settlePan(); syncAll(); renderStrip(); }
+  else if (['dragMode', 'inner.layout', 'ascii.style', 'theme', 'kind', 'inner.event', 'logo.on'].includes(path)) { if (path === 'inner.layout') settlePan(); syncAll(); if (path === 'kind' || path === 'inner.layout') renderStrip(); }
+  else if (['panX', 'panY', 'zoom', 'circle.x', 'circle.y', 'circle.r', 'inner.cont'].includes(path)) debounce('settle', () => { settlePan(); syncAll(); }, 250);
+  else if (path === 'circ.cutout') buildGrayCMasked();
+  else if (path === 'ascii.auto') { if (P.gray) buildMasked(); }
+
+  else if (path === 'text.font' || path === 'ascii.font') loadFonts().then(requestRender);
+  if (ADV_PATHS.includes(path)) updateAdvChip();
+  requestRender(); saveSoon();
+}
+function setModeNote(txt){ $('#mode-note').innerHTML = txt; }
+function updateModeUI(){
+  $('#key-ctl').hidden = S.mode !== 'key';
+  $('#seed-ctl').hidden = S.ascii.style !== 'scatter';
+  const inner = S.slide === 'inner', alt = firstAlt();
+  const noPhoto = (inner && S.inner.layout === 'text') || (alt && S.firstLayout === 'text');
+  $('#sec-inner').hidden = !inner;
+  $('#sec-text').hidden = inner;
+  for (const id of ['#sec-ascii', '#sec-circle']) $(id).hidden = inner || alt;
+  for (const id of ['#r-shift', '#t-avoid']) { const el = $(id).closest('.ctl, .switch'); if (el) el.hidden = alt; }
+  updateAdvChip();
+  $('#sec-photo').hidden = noPhoto;
+  $('#photo-note').hidden = inner;
+  const cs = cutoutState(), mw = $('#mode-warn');
+  mw.hidden = !(cs === 'none' || cs === 'all');
+  if (cs === 'none') mw.textContent = S.mode === 'key' ? 'Pozadí se nepodařilo odstranit. U fotky osoby zkus Najít osobu, jinak Nechat.' : 'Pozadí se nepodařilo odstranit. Zkus Jednobarevné, nebo Nechat.';
+  else if (cs === 'all') mw.textContent = 'Z fotky zbylo jen málo. Zkus Najít osobu, nebo v pokročilém nastavení sniž citlivost odstranění.';
+  $('#drag-seg').querySelector('[data-value="circle"]').disabled = inner || alt;
+  const isEvent = S.kind === 'event';
+  $('#sec-event').hidden = !isEvent;
+  $('#sec-logo').hidden = !isEvent;
+  $('#ev-detail').hidden = !(inner && isEvent);
+  $('#logo-ctl').hidden = !S.logo.on;
+  updateExportUI();
+  updateDateWarn();
+  if ((inner || alt) && S.dragMode === 'circle') S.dragMode = 'photo';
+  $('#drag-seg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === S.dragMode)));
+  const notes = {
+    key:'Odstraní jednolité pozadí kolem okrajů fotky. Hodí se na fotky před zdí nebo plátnem. Doladit jde v pokročilém nastavení.',
+    ai:'Najde na fotce osobu a zbytek odstraní. Hodí se na portréty a fotky lidí. Poprvé to chvíli trvá.',
+    png:'Použije se průhlednost z nahraného PNG. Vyříznutou fotku uděláš třeba v Canvě, Photoshopu nebo na Macu přes „Odstranit pozadí“.',
+    none:'Fotka zůstane celá. Světlé plochy stejně splynou se žlutou, protože do nich nepadnou žádné znaky.',
+  };
+  if (!(S.mode === 'ai' && aiBusy)) setModeNote(notes[S.mode]);
+}
+
+/* ---- ASCII advanced: flag when anything differs from the defaults ---- */
+const ADV_PATHS = ['keyTol', 'keySoft', 'ascii.style', 'ascii.contrast', 'ascii.bright', 'ascii.fade', 'ascii.focus', 'ascii.split', 'ascii.cutoff', 'ascii.ghost', 'ascii.auto', 'ascii.invert'];
+function updateAdvChip(){ $('#adv-chip').hidden = ADV_PATHS.every(p => getPath(p) === getPath(p, DEFAULTS)); }
+$('#btn-adv-reset').addEventListener('click', () => {
+  const keyChanged = S.keyTol !== DEFAULTS.keyTol || S.keySoft !== DEFAULTS.keySoft;
+  for (const p of ADV_PATHS) setPath(p, getPath(p, DEFAULTS));
+  syncAll(); if (P.gray) buildMasked(); if (keyChanged) rebuildMask(); requestRender(); saveSoon();
+});
+
+/* ---- a past event date is the typical leftover from the previous post ---- */
+function eventIsPast(){
+  if (S.kind !== 'event') return null;
+  const pd = parseEventDate(S.event.date); if (!pd) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return pd.date < today ? pd : null;
+}
+function updateDateWarn(){
+  const past = eventIsPast(), el = $('#date-warn');
+  el.hidden = !past;
+  if (past) el.textContent = `Akce z ${S.event.date.trim()} už proběhla. Uprav datum, nebo přepni na Příspěvek.`;
+}
+
+/* ---- partner logo (kept in this browser only) ---- */
+const LOGO_KEY = 'fai-post-studio-logo';
+function setLogo(url, name){
+  const im = new Image();
+  im.onload = () => { LOGO.img = im; LOGO.url = url; LOGO.name = name || 'Logo partnera'; LOGO.tintKey = ''; $('#logo-name').textContent = LOGO.name; requestRender(); };
+  im.onerror = () => toast('Tohle logo prohlížeč neumí otevřít. Zkus PNG nebo SVG.');
+  im.src = url;
+}
+$('#btn-logo').addEventListener('click', () => $('#logo-file').click());
+$('#logo-file').addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f || !/^image\//.test(f.type)) { toast('Logo musí být obrázek, nejlépe PNG nebo SVG.'); return; }
+  const rd = new FileReader();
+  rd.onload = () => {
+    setLogo(rd.result, f.name);
+    if (!S.logo.on) { S.logo.on = true; syncAll(); saveSoon(); }
+    try { if (rd.result.length < 700000) localStorage.setItem(LOGO_KEY, JSON.stringify({ url:rd.result, name:f.name })); } catch (err) {}
+  };
+  rd.readAsDataURL(f);
+});
+try { const sv = JSON.parse(localStorage.getItem(LOGO_KEY) || 'null'); if (sv && sv.url) setLogo(sv.url, sv.name); } catch (e) {}
+
+/* ---- brand lock ---- */
+let brandUnlocked = false;
+function setBrandLock(unlocked){
+  brandUnlocked = unlocked;
+  $('#brand-fields').disabled = !unlocked;
+  $('#brand-wrap').classList.toggle('locked', !unlocked);
+  $('#sec-brand').classList.toggle('unlocked', unlocked);
+  $('#btn-lock').setAttribute('aria-pressed', String(unlocked));
+  $('#btn-lock-txt').textContent = unlocked ? 'Zamknout' : 'Odemknout';
+  $('#lock-chip-txt').textContent = unlocked ? 'Odemčeno' : 'Zamčeno';
+  $('#lock-note').textContent = unlocked
+    ? 'Změny se projeví na všech dalších příspěvcích. Po úpravě zase zamkni.'
+    : 'Platí pro celou sérii příspěvků. Měň jen po domluvě, aby profil zůstal jednotný.';
+}
+$('#btn-lock').addEventListener('click', () => setBrandLock(!brandUnlocked));
+$('#brand-wrap').addEventListener('click', () => {
+  if (brandUnlocked) return;
+  const w = $('#brand-wrap'), b = $('#btn-lock');
+  w.classList.remove('nudge'); b.classList.remove('pulse'); void w.offsetWidth;
+  w.classList.add('nudge'); b.classList.add('pulse');
+  toast('Nastavení je zamčené. Nejdřív klikni na Odemknout.');
+});
+$('#btn-brand-reset').addEventListener('click', () => {
+  brandDefaults(); syncAll(); buildGrayC(); loadFonts().then(requestRender); requestRender(); saveSoon();
+  toast('Vzhled značky je zase výchozí.');
+});
+setBrandLock(false);
+
+/* ---- buttons ---- */
+function preset(y, shift){ S.circle.x = 0.77; S.circle.y = y; S.circle.r = 0.395; S.text.shift = shift; settlePan(); syncAll(); requestRender(); saveSoon(); }
+$('#btn-top').addEventListener('click', () => preset(0.23, 0.35));
+$('#btn-bottom').addEventListener('click', () => preset(0.8, -0.55));
+$('#btn-center').addEventListener('click', () => { S.zoom = 1; S.panX = 0; S.panY = 0; syncAll(); requestRender(); saveSoon(); });
+$('#btn-seed').addEventListener('click', () => { S.ascii.seed = (S.ascii.seed * 7 + 13) % 997; requestRender(); saveSoon(); });
+/* ---- persistence: settings here, photos and the project list in IndexedDB ---- */
+function saveSoon(){
+  debounce('save', () => { stashSlide(); try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} }, 400);
+  debounce('saveRec', saveProjectRecord, 1500);
+}
+
+/* ================= export ================= */
+let downloads = null;
+if (window.claude && typeof window.claude.use === 'function') {
+  window.claude.use('downloads').then(d => { downloads = d; }).catch(() => {});
+}
+function slug(s){
+  return (s || 'fai-post').replace(/\*/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'fai-post';
+}
+async function renderBlob(){
+  await loadFonts();
+  const [W, H] = dims(), c = makeCanvas(W, H);
+  render(c.getContext('2d'), W, H);
+  return new Promise(res => c.toBlob(res, 'image/png'));
+}
+async function renderBlobAt(W, H){
+  await loadFonts();
+  const c = makeCanvas(W, H);
+  render(c.getContext('2d'), W, H);
+  return new Promise(res => c.toBlob(res, 'image/png'));
+}
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function makeZip(files){
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  for (const f of files) {
+    const data = new Uint8Array(await f.blob.arrayBuffer()), name = enc.encode(f.name), crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+    parts.push(lh.buffer, name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+    central.push(ch.buffer, name);
+    offset += 30 + name.length + data.length;
+  }
+  const size = central.reduce((s, p) => s + (p.byteLength || p.length), 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, size, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, end.buffer], { type:'application/zip' });
+}
+async function offerFile(name, blob){
+  if (downloads) {
+    try { await downloads.save({ filename:name, data:blob }); toast('Uloženo: ' + name); return true; }
+    catch (err) {
+      const code = err && err.code;
+      if (code === 'declined') { toast('Stažení zrušeno.'); return true; }
+      if (code === 'rate_limited') { toast('Jedno stažení už čeká na potvrzení.'); return true; }
+      return false;
+    }
+  }
+  if (window.claude) return false;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('Stahuji ' + name);
+  return true;
+}
+function updateExportUI(){
+  const N = S.slides.length;
+  $('#btn-export').textContent = N > 1 ? `Stáhnout karusel · ${N}` : 'Stáhnout PNG';
+  $('#btn-export').title = N > 1 ? 'Všechny snímky v jednom ZIPu, očíslované v pořadí karuselu' : '';
+  $('#btn-one').hidden = N < 2;
+  $('#btn-set').hidden = S.kind !== 'event';
+  $('#btn-set').title = N > 1 ? 'Všechny snímky postu a story z titulky v jednom ZIPu' : 'Post i story v jednom ZIPu';
+}
+function slideFile(i, fmt){
+  const sl = S.slides[i], f = fmt.replace(':', 'x');
+  return `${String(i + 1).padStart(2, '0')}-${i === 0 ? 'titulni' : slug(sl.inner.headline)}-${f}.png`;
+}
+/* render any slides off-screen; the editor returns to the slide it was on */
+async function renderSlides(jobs){
+  const back = S.cur, files = [];
+  stashSlide(); EXPORTING = true;
+  try {
+    await loadFonts();
+    for (const job of jobs) {
+      enterSlide(job.i);
+      await activatePhoto();
+      const c = makeCanvas(job.W, job.H);
+      render(c.getContext('2d'), job.W, job.H);
+      if (job.thumb) { const t = thumbOf(c); if (t) THUMBS.set(S.slides[job.i].id, t); }
+      files.push({ name:job.name, blob:await canvasBlob(c, 'image/png') });
+    }
+  } finally {
+    enterSlide(back);
+    await activatePhoto();
+    EXPORTING = false;
+    settlePan(); syncAll(); renderStrip(); requestRender();
+  }
+  return files;
+}
+async function saveOrShow(name, blob){
+  if (await offerFile(name, blob)) return;
+  showOverlay(blob);
+}
+async function exportCurrent(){
+  const [W, H] = dims();
+  const [f] = await renderSlides([{ i:S.cur, W, H, name:S.slides.length > 1 ? slideFile(S.cur, S.format) : `${projSlug()}-${S.format.replace(':', 'x')}.png` }]);
+  await saveOrShow(f.name, f.blob);
+}
+$('#btn-export').addEventListener('click', async e => {
+  const btn = e.currentTarget, N = S.slides.length;
+  if (EXPORTING) return;
+  btn.disabled = true;
+  try {
+    if (N === 1) { await exportCurrent(); return; }
+    const [W, H] = dims();
+    const files = await renderSlides(S.slides.map((sl, i) => ({ i, W, H, name:slideFile(i, S.format), thumb:true })));
+    const zip = await makeZip(files);
+    if (!(await offerFile(`${projSlug()}-karusel.zip`, zip))) showOverlay(files[S.cur].blob);
+  } finally { btn.disabled = false; }
+});
+$('#btn-set').addEventListener('click', async e => {
+  const btn = e.currentTarget;
+  if (EXPORTING) return;
+  btn.disabled = true;
+  try {
+    if (eventIsPast()) toast('Pozor: datum akce už proběhlo.');
+    const base = projSlug(), postF = S.format === '9:16' ? '4:5' : S.format, [pw, ph] = FORMATS[postF], N = S.slides.length;
+    const jobs = S.slides.map((sl, i) => ({ i, W:pw, H:ph, name:N > 1 ? slideFile(i, postF) : `${base}-post-${postF.replace(':', 'x')}.png` }));
+    jobs.push({ i:0, W:1080, H:1920, name:`${base}-story-9x16.png` });
+    const files = await renderSlides(jobs);
+    const zip = await makeZip(files);
+    if (!(await offerFile(`${base}-akce.zip`, zip))) await saveOrShow(files[0].name, files[0].blob);
+  } finally { btn.disabled = false; }
+});
+function showOverlay(blob){
+  const img = $('#ov-img');
+  if (img.src) URL.revokeObjectURL(img.src);
+  img.src = URL.createObjectURL(blob);
+  $('#overlay').hidden = false;
+  $('#ov-close').focus();
+}
+$('#ov-close').addEventListener('click', () => { $('#overlay').hidden = true; });
+$('#overlay').addEventListener('click', e => { if (e.target.id === 'overlay') $('#overlay').hidden = true; });
+function closeMenu(){ $('#more-menu').hidden = true; $('#btn-more').setAttribute('aria-expanded', 'false'); }
+$('#btn-more').addEventListener('click', e => {
+  e.stopPropagation();
+  const m = $('#more-menu'), open = m.hidden;
+  m.hidden = !open; $('#btn-more').setAttribute('aria-expanded', String(open));
+  if (open) { const first = [...m.querySelectorAll('button')].find(b => !b.hidden); if (first) first.focus(); }
+});
+document.addEventListener('click', e => { if (!$('#more-menu').hidden && !e.target.closest('#more-menu')) closeMenu(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  $('#overlay').hidden = true; closeMenu(); closeProjects();
+});
+$('#btn-view').addEventListener('click', async () => {
+  closeMenu();
+  const [W, H] = dims();
+  const [f] = await renderSlides([{ i:S.cur, W, H, name:'nahled.png' }]);
+  showOverlay(f.blob);
+});
+$('#btn-one').addEventListener('click', async () => {
+  closeMenu();
+  if (EXPORTING) return;
+  await exportCurrent();
+});
+
+/* ================= carousel: slides ================= */
+const LAYOUT_NAMES = { photo:'fotka s textem', small:'text s fotkou', text:'jen text', full:'celá fotka' };
+const THUMBS = new Map();   // slide id -> small JPEG data URL for the strip and the project list
+const curSlide = () => S.slides[S.cur];
+/* live editing state -> the slide it belongs to */
+function stashSlide(){
+  const sl = curSlide(); if (!sl) return;
+  S.pos[uiKey()] = { zoom:S.zoom, panX:S.panX, panY:S.panY, set:true };
+  sl.mode = S.mode;
+  if (sl.type === 'inner') { sl.inner = S.inner; sl.pos = { inner:clone(S.pos.inner), 'inner-story':clone(S.pos['inner-story']) }; }
+}
+/* slide i -> live editing state (no photo work, see activatePhoto) */
+function enterSlide(i){
+  S.cur = Math.max(0, Math.min(S.slides.length - 1, i | 0));
+  const sl = curSlide();
+  S.slide = sl.type;
+  S.mode = MODES.includes(sl.mode) ? sl.mode : 'key';
+  if (sl.type === 'inner') { S.inner = sl.inner; S.pos.inner = clone(sl.pos.inner); S.pos['inner-story'] = clone(sl.pos['inner-story']); }
+  else S.inner = clone(DEFAULTS.inner);
+  const k = uiKey(); let p = S.pos[k];
+  if (!p || p.set === false) p = S.pos[k.replace('-story', '')] || { zoom:1, panX:0, panY:0 };
+  S.zoom = p.zoom; S.panX = p.panX; S.panY = p.panY; lastKey = k;
+}
+function afterPhoto(pr){ pr.then(() => { settlePan(); syncAll(); requestRender(); }); }
+function goSlide(i){
+  if (EXPORTING || i < 0 || i >= S.slides.length || i === S.cur) return;
+  stashSlide(); enterSlide(i);
+  const pr = activatePhoto();
+  settlePan(); syncAll(); renderStrip(true); requestRender(); saveSoon();
+  afterPhoto(pr);
+}
+let stripCur = -1;
+function renderStrip(focus){
+  const list = $('#strip-list'), [W, H] = dims(), N = S.slides.length;
+  list.textContent = '';
+  S.slides.forEach((sl, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.dataset.id = sl.id;
+    b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(i === S.cur)); b.tabIndex = i === S.cur ? 0 : -1;
+    b.style.width = Math.round(60 * W / H) + 'px';
+    const label = i === 0 ? (S.firstLayout === 'cover' ? 'Titulní snímek' : `Snímek 1, ${LAYOUT_NAMES[S.firstLayout] || ''}`) : `Snímek ${i + 1}, ${LAYOUT_NAMES[sl.inner.layout] || ''}`;
+    b.title = label; b.setAttribute('aria-label', label);
+    const th = THUMBS.get(sl.id);
+    if (th) { const im = document.createElement('img'); im.src = th; im.alt = ''; b.appendChild(im); }
+    else { const ph = document.createElement('span'); ph.className = 'ph'; ph.textContent = i === 0 ? 'Titulka' : 'Snímek'; b.appendChild(ph); }
+    const num = document.createElement('span'); num.className = 'num'; num.textContent = i + 1; b.appendChild(num);
+    b.addEventListener('click', () => goSlide(i));
+    list.appendChild(b);
+  });
+  const sel = list.children[S.cur];
+  if (sel && stripCur !== S.cur) { list.scrollLeft = Math.max(0, sel.offsetLeft - list.clientWidth / 2 + sel.offsetWidth / 2); stripCur = S.cur; }
+  if (focus && sel && list.contains(document.activeElement)) sel.focus();
+  $('#slide-pos').textContent = N > 1 ? `Snímek ${S.cur + 1} z ${N}` : 'Další snímek z příspěvku udělá karusel';
+  $('#strip').classList.toggle('solo', N < 2);
+  $('#slide-acts').hidden = S.cur < 1;
+  $('#btn-left').disabled = S.cur <= 1;
+  $('#btn-right').disabled = S.cur >= N - 1;
+  $('#btn-add').disabled = N >= MAX_SLIDES;
+  $('#btn-dup').disabled = N >= MAX_SLIDES;
+  $('#num-ctl').hidden = N < 2;
+  updateExportUI();
+}
+$('#strip-list').addEventListener('keydown', e => {
+  const d = { ArrowLeft:-1, ArrowRight:1 }[e.key]; if (!d) return;
+  e.preventDefault(); goSlide(S.cur + d);
+  const t = $('#strip-list').children[S.cur]; if (t) t.focus();
+});
+function captureThumb(){
+  const sl = curSlide(); if (!sl || EXPORTING) return;
+  if (RENDERED !== S.project.id + '|' + sl.id) return;   // the canvas still shows another slide or project
+  const url = thumbOf(cv); if (!url) return;
+  THUMBS.set(sl.id, url);
+  const img = document.querySelector(`#strip-list [data-id="${sl.id}"] img`);
+  if (img) img.src = url; else renderStrip();
+}
+function thumbOf(src){
+  const tw = 120, th = Math.round(tw * src.height / src.width);
+  const c = makeCanvas(tw, th), x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, tw, th);
+  try { return c.toDataURL('image/jpeg', 0.72); } catch (e) { return null; }
+}
+/* one slide of an event carries the details (date, place, entry, call to action): the first one added */
+const detailSlide = () => S.slides.some((sl, i) => i > 0 && sl.inner && sl.inner.event);
+function newInnerSlide(layout, event){
+  if (event == null) event = S.kind === 'event' && !detailSlide();
+  return innerSlide({ inner:{ layout, eyebrow:'', pill:true, headline:'', body:'', size:84, event } });
+}
+$('#btn-add-detail').addEventListener('click', () => {
+  if (EXPORTING || S.slides.length >= MAX_SLIDES) return;
+  stashSlide();
+  S.slides.splice(1, 0, newInnerSlide('text', true));
+  S.cur = S.cur >= 1 ? S.cur + 1 : S.cur;
+  goSlide(1);
+  toast('Druhý snímek ukazuje podrobnosti akce. Doplň nadpis, třeba „Jak se zapojit“.', 4500);
+});
+$('#btn-add').addEventListener('click', () => {
+  if (EXPORTING || S.slides.length >= MAX_SLIDES) return;
+  stashSlide();
+  const lay = S.cur > 0 ? S.inner.layout : 'photo';
+  S.slides.splice(S.cur + 1, 0, newInnerSlide(lay));
+  goSlide(S.cur + 1);
+  if (S.slides.length === 11) toast('V aplikaci Instagram jde nahrát až 20 snímků, plánovače přes API berou jen 10.', 5000);
+});
+$('#btn-dup').addEventListener('click', () => {
+  if (EXPORTING || S.cur < 1 || S.slides.length >= MAX_SLIDES) return;
+  stashSlide();
+  const src = curSlide(), copy = JSON.parse(JSON.stringify(src));
+  copy.id = uid('s');
+  if (THUMBS.has(src.id)) THUMBS.set(copy.id, THUMBS.get(src.id));
+  S.slides.splice(S.cur + 1, 0, innerSlide(copy));
+  goSlide(S.cur + 1);
+});
+let delTimer = 0;
+$('#btn-del').addEventListener('click', e => {
+  if (EXPORTING || S.cur < 1) return;
+  const btn = e.currentTarget;
+  if (!delTimer) { btn.textContent = 'Opravdu smazat?'; delTimer = setTimeout(() => { delTimer = 0; btn.textContent = 'Smazat'; }, 2600); return; }
+  clearTimeout(delTimer); delTimer = 0; btn.textContent = 'Smazat';
+  const gone = S.slides.splice(S.cur, 1)[0];
+  THUMBS.delete(gone.id);
+  enterSlide(Math.min(S.cur, S.slides.length - 1));
+  const pr = activatePhoto();
+  settlePan(); syncAll(); renderStrip(); requestRender(); saveSoon();
+  afterPhoto(pr);
+  toast('Snímek je smazaný.');
+});
+function moveSlide(d){
+  const i = S.cur, j = i + d;
+  if (EXPORTING || i < 1 || j < 1 || j >= S.slides.length) return;
+  stashSlide();
+  [S.slides[i], S.slides[j]] = [S.slides[j], S.slides[i]];
+  S.cur = j; stripCur = -1;
+  renderStrip(); requestRender(); saveSoon();
+}
+$('#btn-left').addEventListener('click', () => moveSlide(-1));
+$('#btn-right').addEventListener('click', () => moveSlide(1));
+$('#btn-same').addEventListener('click', () => {
+  const cov = S.slides[0].photo; if (!cov || S.cur < 1) return;
+  stashSlide(); curSlide().photo = cov; resetFraming();
+  const pr = activatePhoto();
+  settlePan(); syncAll(); renderStrip(); requestRender(); saveSoon();
+  afterPhoto(pr);
+});
+
+/* ================= text warnings ================= */
+function updateTextWarn(){
+  const inner = S.slide === 'inner', el = $(inner ? '#text-warn2' : '#text-warn');
+  $(inner ? '#text-warn' : '#text-warn2').hidden = true;
+  const n = LNOTE, msgs = [];
+  if (n) {
+    if (n.pillCut) msgs.push(`Štítek je na šířku sloupce moc dlouhý, konec jsem zkrátil. Vejde se zhruba ${n.pillMax} znaků.`);
+    if (!n.fits) msgs.push('Text se nevejde ani zmenšený. Zkrať popis nebo údaje o akci.');
+    else if (n.ratio < 0.8) msgs.push(`Nadpis se nevešel, proto je menší (${Math.round(n.ratio * 100)} % nastavené velikosti). Zkrať ho nebo použij kratší slova${inner ? '' : ', titulka nejlíp funguje do 5–6 slov'}.`);
+  }
+  const txt = msgs.join(' ');
+  if (el.textContent !== txt) el.textContent = txt;
+  el.hidden = !txt;
+  const ev = S.event, needDetail = S.kind === 'event' && !ev.full && [ev.info1, ev.info2, ev.info3, ev.cta].some(v => (v || '').trim()) && !detailSlide();
+  if ($('#detail-need').hidden === needDetail) $('#detail-need').hidden = !needDetail;
+  const pw = $('#place-warn'), ptx = n && n.placeWrap && S.cur === 0 ? 'Místo se láme na dva řádky. Na obrázek stačí krátce, třeba „Foyer FAI“; celý název patří do popisku.' : '';
+  if (pw.textContent !== ptx) pw.textContent = ptx;
+  pw.hidden = !ptx;
+}
+
+/* ================= storage: photos and projects in this browser ================= */
+const DB = { db:null, ok:false };
+function idbOpen(){
+  return new Promise(res => {
+    let r;
+    try { r = indexedDB.open('fai-post-studio', 1); } catch (e) { return res(false); }
+    r.onupgradeneeded = () => { const db = r.result; for (const n of ['photos', 'projects']) if (!db.objectStoreNames.contains(n)) db.createObjectStore(n, { keyPath:'id' }); };
+    r.onsuccess = () => { DB.db = r.result; DB.ok = true; res(true); };
+    r.onerror = () => res(false);
+    r.onblocked = () => res(false);
+    setTimeout(() => res(DB.ok), 5000);
+  });
+}
+function idbTx(store, mode, fn){
+  return new Promise((res, rej) => {
+    if (!DB.ok) return rej(new Error('nodb'));
+    try {
+      const tx = DB.db.transaction(store, mode), req = fn(tx.objectStore(store));
+      tx.oncomplete = () => res(req ? req.result : undefined);
+      tx.onerror = tx.onabort = () => rej(tx.error || new Error('idb'));
+    } catch (e) { rej(e); }
+  });
+}
+const idbGet = (s, k) => idbTx(s, 'readonly', st => st.get(k));
+const idbAll = s => idbTx(s, 'readonly', st => st.getAll());
+const idbKeys = s => idbTx(s, 'readonly', st => st.getAllKeys());
+const idbPut = (s, v) => idbTx(s, 'readwrite', st => st.put(v));
+const idbDel = (s, k) => idbTx(s, 'readwrite', st => st.delete(k));
+
+function addPhoto(id, blob, name){
+  return new Promise(res => {
+    const img = new Image(), url = URL.createObjectURL(blob);
+    img.onload = () => { PHOTOS.set(id, { img, name:name || 'Fotka', blob }); res(true); };
+    img.onerror = () => { URL.revokeObjectURL(url); res(false); };
+    img.src = url;
+  });
+}
+function canvasBlob(c, type, q){ return new Promise(res => c.toBlob(res, type, q)); }
+function imageBlob(img, alpha){
+  const s = Math.min(1, 2400 / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+  const c = makeCanvas((img.naturalWidth || img.width) * s, (img.naturalHeight || img.height) * s);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return canvasBlob(c, alpha ? 'image/png' : 'image/jpeg', 0.92);
+}
+/* keep an upload as it came when it is reasonable, otherwise a 2400 px copy */
+async function persistPhoto(id, file, img, alpha){
+  let blob = file;
+  const big = Math.max(img.naturalWidth, img.naturalHeight) > 2600 || file.size > 4e6 || !/^image\/(jpeg|png|webp)$/.test(file.type);
+  if (big) blob = (await imageBlob(img, alpha)) || file;
+  const ph = PHOTOS.get(id); if (ph) ph.blob = blob;
+  if (DB.ok) idbPut('photos', { id, name:file.name || 'Fotka', blob }).catch(() => {});
+}
+let sampleReady = Promise.resolve();
+async function ensurePhotos(){
+  const ids = [...new Set(S.slides.map(s => s.photo).filter(Boolean))];
+  for (const id of ids) {
+    if (PHOTOS.has(id)) continue;
+    if (id === 'sample') { await sampleReady; continue; }
+    if (!DB.ok) continue;
+    try { const r = await idbGet('photos', id); if (r && r.blob) await addPhoto(id, r.blob, r.name); } catch (e) {}
+  }
+}
+function projectName(){ return (S.text.headline || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim() || 'Bez názvu'; }
+function projSlug(){ return slug(S.text.headline); }
+function updateProjName(){
+  const el = $('#proj-name');
+  el.textContent = projectName();
+  el.title = DB.ok ? 'Průběžně se ukládá v tomto prohlížeči' : 'Tento prohlížeč projekty neukládá, ulož si je do souboru';
+}
+async function saveProjectRecord(){
+  if (!DB.ok) return false;
+  stashSlide();
+  const ids = new Set(S.slides.map(s => s.id)), thumbs = {};
+  for (const [k, v] of THUMBS) if (ids.has(k)) thumbs[k] = v;
+  try {
+    await idbPut('projects', { id:S.project.id, name:projectName(), updated:Date.now(), created:S.project.created || Date.now(), count:S.slides.length, kind:S.kind, state:JSON.parse(JSON.stringify(S)), thumbs });
+    return true;
+  } catch (e) { return false; }
+}
+/* forget photos no project uses any more; keep the 40 most recent projects */
+async function gcStorage(){
+  if (!DB.ok) return;
+  try {
+    const recs = (await idbAll('projects')).sort((a, b) => b.updated - a.updated);
+    for (const r of recs.slice(40)) if (r.id !== S.project.id) await idbDel('projects', r.id);
+    const keep = new Set(S.slides.map(s => s.photo));
+    for (const r of recs.slice(0, 40)) for (const s of (r.state && r.state.slides) || []) if (s.photo) keep.add(s.photo);
+    for (const k of await idbKeys('photos')) if (!keep.has(k)) await idbDel('photos', k);
+  } catch (e) {}
+}
+/* replace the whole editor state with another project */
+async function openProject(state, opts){
+  opts = opts || {};
+  if (EXPORTING) return;
+  await saveProjectRecord();
+  S = buildState(state);
+  if (opts.newId) S.project = { id:uid('j'), created:Date.now() };
+  if (opts.thumbs) for (const [k, v] of Object.entries(opts.thumbs)) if (typeof v === 'string' && v.startsWith('data:image/')) THUMBS.set(k, v);
+  enterSlide(S.cur); stripCur = -1;
+  await ensurePhotos();
+  resizeCanvas(); syncAll(); renderStrip(); updateProjName();
+  loadFonts().then(requestRender);
+  await activatePhoto();
+  settlePan(); syncAll(); requestRender();
+  saveSoon();
+}
+
+/* ================= new project, copy of a project ================= */
+function setPathIn(obj, p, v){ const ks = p.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], obj)[last] = v; }
+/* keep the series look and the format of the editor in a project that replaces the current one */
+function keepLook(st){
+  for (const p of BRAND_PATHS) setPathIn(st, p, getPath(p));
+  st.brandRev = DEFAULTS.brandRev;
+  st.format = S.format === '9:16' ? '4:5' : S.format;
+  return st;
+}
+function blankState(){
+  const st = buildState(null);
+  st.slides = [{ id:uid('s'), type:'cover', photo:null, mode:'key' }];
+  st.pos.cover = { zoom:1, panX:0, panY:0 };
+  Object.assign(st.text, { eyebrow:'', pill:true, headline:'', body:'', arrow:true });
+  Object.assign(st.event, { date:'', time:'', place:'', entry:'', host:'', role:'', cta:'', ctaStory:'' });
+  st.kind = 'post'; st.logo.on = false;
+  st.project = { id:uid('j'), created:Date.now() };
+  return keepLook(st);
+}
+/* a copy keeps texts, photos, framing and partner logo; it gets its own id and slide ids */
+function copyOf(state, thumbs){
+  const st = buildState(JSON.parse(JSON.stringify(state)));
+  const th = {};
+  st.slides.forEach(sl => { const id = uid('s'); if (thumbs && typeof thumbs[sl.id] === 'string') th[id] = thumbs[sl.id]; sl.id = id; });
+  st.project = { id:uid('j'), created:Date.now() };
+  st.cur = 0;
+  return { state:st, thumbs:th };
+}
+function plural(n){ return n === 1 ? '1 snímek' : n < 5 ? `${n} snímky` : `${n} snímků`; }
+function whenTxt(t){
+  const d = new Date(t), now = new Date(), hm = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(now) - day(d)) / 864e5);
+  return diff === 0 ? `dnes ${hm}` : diff === 1 ? `včera ${hm}` : `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
+}
+async function renderRecent(){
+  const box = $('#recent'), note = $('#recent-note');
+  box.textContent = '';
+  if (!DB.ok) { note.textContent = 'Tento prohlížeč rozpracované projekty neukládá (třeba v anonymním okně). Projekt si ulož do souboru.'; return; }
+  note.textContent = 'Ukládají se jen v tomto prohlížeči. Kolegovi nebo ke schválení pošli projekt jako soubor.';
+  await saveProjectRecord();
+  let recs = [];
+  try { recs = await idbAll('projects'); } catch (e) {}
+  recs.sort((a, b) => b.updated - a.updated);
+  for (const r of recs) {
+    const row = document.createElement('div'); row.className = 'rec' + (r.id === S.project.id ? ' cur' : '');
+    const first = r.state && r.state.slides && r.state.slides[0], th = first && r.thumbs && r.thumbs[first.id];
+    const im = document.createElement(th ? 'img' : 'span'); im.className = 'rec-th';
+    if (th) { im.src = th; im.alt = ''; }
+    const t = document.createElement('div'); t.className = 't';
+    const nm = document.createElement('b'); nm.textContent = r.name || 'Bez názvu';
+    const evDate = r.kind === 'event' && r.state && r.state.event && typeof r.state.event.date === 'string' ? r.state.event.date.trim() : '';
+    const meta = document.createElement('span'); meta.textContent = `${r.kind === 'event' ? 'akce' + (evDate ? ' ' + evDate : '') : 'příspěvek'} · ${plural(r.count || 1)} · upraveno ${whenTxt(r.updated)}`;
+    t.append(nm, meta);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'btn small'; copy.textContent = 'Kopie';
+    copy.title = 'Nový projekt se stejnými texty, fotkami a výřezem';
+    copy.addEventListener('click', async () => {
+      if (r.id === S.project.id) await saveProjectRecord();
+      const src = r.id === S.project.id ? { state:JSON.parse(JSON.stringify(S)), thumbs:Object.fromEntries(THUMBS) } : r;
+      const c = copyOf(src.state, src.thumbs);
+      closeProjects();
+      await openProject(c.state, { thumbs:c.thumbs });
+      toast(`Kopie projektu ${r.name || ''} je otevřená. Přepiš, co se mění.`, 4000);
+    });
+    if (r.id === S.project.id) {
+      const cur = document.createElement('span'); cur.className = 'cur-tag'; cur.textContent = 'otevřený'; acts.append(cur, copy);
+    } else {
+      const open = document.createElement('button'); open.type = 'button'; open.className = 'btn small'; open.textContent = 'Otevřít';
+      open.addEventListener('click', async () => { closeProjects(); await openProject(r.state, { thumbs:r.thumbs }); toast(`Otevřeno: ${r.name || 'projekt'}`); });
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'btn small'; del.textContent = 'Smazat';
+      del.addEventListener('click', async () => {
+        if (!del.dataset.armed) { del.dataset.armed = '1'; del.textContent = 'Opravdu?'; setTimeout(() => { delete del.dataset.armed; del.textContent = 'Smazat'; }, 2600); return; }
+        try { await idbDel('projects', r.id); } catch (e) {}
+        row.remove(); gcStorage();
+      });
+      acts.append(open, copy, del);
+    }
+    row.append(im, t, acts);
+    box.appendChild(row);
+  }
+}
+function openProjects(){ renderRecent(); $('#proj-ov').hidden = false; $('#proj-close').focus(); }
+function closeProjects(){ $('#proj-ov').hidden = true; }
+$('#btn-projects').addEventListener('click', openProjects);
+$('#proj-close').addEventListener('click', closeProjects);
+$('#proj-ov').addEventListener('click', e => { if (e.target.id === 'proj-ov') closeProjects(); });
+$('#btn-new').addEventListener('click', async () => {
+  closeProjects();
+  await openProject(blankState());
+  toast('Nový příspěvek. Předchozí najdeš v Projektech.');
+  const h = $('#i-head'); if (h) h.focus();
+});
+/* ---- project file: texts, photos and thumbnails in one JSON ---- */
+function blobToDataURL(b){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); }
+function dataURLToBlob(u){
+  const m = /^data:([^;,]+)?(;base64)?,(.*)$/.exec(u || ''); if (!m) return null;
+  const bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]), a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return new Blob([a], { type:m[1] || 'application/octet-stream' });
+}
+async function saveProjectFile(){
+  stashSlide();
+  const photos = {};
+  for (const id of new Set(S.slides.map(s => s.photo).filter(Boolean))) {
+    const ph = PHOTOS.get(id); if (!ph) continue;
+    const blob = ph.blob || await imageBlob(ph.img, false);
+    if (blob) photos[id] = { name:ph.name, data:await blobToDataURL(blob) };
+  }
+  const thumbs = {}; for (const s of S.slides) if (THUMBS.has(s.id)) thumbs[s.id] = THUMBS.get(s.id);
+  const doc = { app:'FAI Post Studio', type:'projekt', version:1, saved:new Date().toISOString(), name:projectName(), state:JSON.parse(JSON.stringify(S)), photos, thumbs };
+  if (S.kind === 'event' && S.logo.on && LOGO.url) doc.logo = { url:LOGO.url, name:LOGO.name };
+  const name = `${projSlug()}-projekt.json`;
+  if (!(await offerFile(name, new Blob([JSON.stringify(doc)], { type:'application/json' })))) toast('Soubor se v tomhle zobrazení nepodařilo uložit.');
+}
+$('#btn-save-file').addEventListener('click', saveProjectFile);
+$('#btn-save-file2').addEventListener('click', () => { closeMenu(); saveProjectFile(); });
+$('#btn-open-file').addEventListener('click', () => $('#proj-file').click());
+$('#proj-file').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  let doc = null;
+  try { doc = JSON.parse(await f.text()); } catch (err) {}
+  if (!doc || doc.app !== 'FAI Post Studio' || !doc.state || typeof doc.state !== 'object') { toast('Tohle není soubor projektu z FAI Post Studia.'); return; }
+  for (const [id, ph] of Object.entries(doc.photos || {})) {
+    if (PHOTOS.has(id) || !ph || typeof ph.data !== 'string') continue;
+    const blob = dataURLToBlob(ph.data); if (!blob || !/^image\//.test(blob.type)) continue;
+    if (await addPhoto(id, blob, ph.name) && DB.ok) idbPut('photos', { id, name:ph.name || 'Fotka', blob }).catch(() => {});
+  }
+  if (doc.logo && typeof doc.logo.url === 'string' && /^data:image\//.test(doc.logo.url)) {
+    setLogo(doc.logo.url, doc.logo.name);
+    try { if (doc.logo.url.length < 700000) localStorage.setItem(LOGO_KEY, JSON.stringify({ url:doc.logo.url, name:doc.logo.name })); } catch (err) {}
+  }
+  closeProjects();
+  await openProject(doc.state, { newId:true, thumbs:doc.thumbs && typeof doc.thumbs === 'object' ? doc.thumbs : null });
+  toast(`Otevřeno ze souboru: ${doc.name || 'projekt'}`);
+});
+
+/* ================= event: up to three free lines under the place ================= */
+let infoShown = 1;
+const INFO = ['event.info1', 'event.info2', 'event.info3'];
+function updateInfoRows(){
+  const last = INFO.reduce((n, p, i) => (getPath(p) || '').trim() ? i + 1 : n, 0);
+  infoShown = Math.max(1, Math.min(3, Math.max(infoShown, last)));
+  document.querySelectorAll('#ev-info .info-row').forEach(r => { r.hidden = +r.dataset.i > infoShown; });
+  document.querySelectorAll('#ev-info .info-x').forEach(b => { b.hidden = infoShown === 1 && !(getPath('event.info1') || '').trim(); });
+  $('#btn-info-add').hidden = infoShown >= 3;
+}
+$('#btn-info-add').addEventListener('click', () => {
+  infoShown = Math.min(3, infoShown + 1); updateInfoRows();
+  const inp = $(`#i-ev-info${infoShown}`); if (inp) inp.focus();
+});
+$('#ev-info').addEventListener('click', e => {
+  const b = e.target.closest('.info-x'); if (!b) return;
+  const k = +b.dataset.x;
+  for (let i = k; i < 3; i++) setPath(INFO[i - 1], getPath(INFO[i]));
+  setPath(INFO[2], '');
+  infoShown = Math.max(1, infoShown - 1);
+  syncAll(); updateInfoRows(); requestRender(); saveSoon();
+});
+$('#ev-info').addEventListener('input', updateInfoRows);
+/* leaving the page never loses the last edit */
+window.addEventListener('pagehide', () => { try { stashSlide(); localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} saveProjectRecord(); });
+
+/* ================= fonts + boot ================= */
+function loadFonts(){
+  const t = S.text, [a, b] = HEAD_W[t.font] || [100, 900], wt = clamp(t.weight, a, b);
+  const list = [`${wt} 100px "${t.font}"`, `400 30px "Geist"`, `500 23px "Geist Mono"`, `400 20px "${S.ascii.font}"`, `800 20px "${S.ascii.font}"`];
+  if (!document.fonts || !document.fonts.load) return Promise.resolve();
+  return withTimeout(Promise.all(list.map(f => document.fonts.load(f, 'AaxoČř'))), 4000, 'fonts').catch(() => {});
+}
+
+enterSlide(S.cur);
+syncAll();
+resizeCanvas();
+renderStrip();
+updateProjName();
+loadFonts().then(requestRender);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(requestRender);
+
+const sample = new Image();
+sampleReady = new Promise(res => {
+  sample.onload = () => { PHOTOS.set('sample', { img:sample, name:'Ukázková fotka', blob:null }); res(); };
+  sample.onerror = () => res();
+});
+sample.src = 'sample.jpg';
+(async () => {
+  await idbOpen();
+  await ensurePhotos();
+  if (DB.ok) {
+    try {
+      const rec = await idbGet('projects', S.project.id);
+      if (rec && rec.thumbs) for (const [k, v] of Object.entries(rec.thumbs)) if (!THUMBS.has(k) && typeof v === 'string') THUMBS.set(k, v);
+    } catch (e) {}
+  }
+  updateProjName(); renderStrip();
+  await activatePhoto();
+  settlePan(); syncAll(); requestRender();
+  saveSoon(); gcStorage();
+})();
+})();
+</script>
